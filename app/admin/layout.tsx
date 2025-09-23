@@ -13,6 +13,7 @@ import {
   LogOut,
   Home
 } from 'lucide-react';
+import BackToTop from '../components/BackToTop';
 
 export default function AdminLayout({
   children,
@@ -160,6 +161,7 @@ export default function AdminLayout({
           </div>
         </main>
       </div>
+      <BackToTop />
     </div>
   );
 }

@@ -2,6 +2,12 @@ import { Database } from 'sqlite3';
 import { promisify } from 'util';
 import path from 'path';
 
+// 定义配置对象类型
+interface SiteConfig {
+  id: string;
+  homepage_video_url?: string;
+}
+
 // 获取数据库连接
 function getDatabase(): Promise<Database> {
   return new Promise((resolve, reject) => {
@@ -45,7 +51,7 @@ async function runMigration() {
     }
 
     // 检查是否有默认配置记录，如果没有则创建
-    const defaultConfig = await get("SELECT id FROM site_config WHERE id = 'default'");
+    const defaultConfig = await get("SELECT id FROM site_config WHERE id = 'default'") as SiteConfig | undefined;
     if (!defaultConfig) {
       await run(`
         INSERT INTO site_config (
@@ -61,7 +67,7 @@ async function runMigration() {
       console.log('✅ 创建默认配置记录');
     } else {
       // 如果默认配置存在但没有视频链接，则更新
-      const currentConfig = await get("SELECT homepage_video_url FROM site_config WHERE id = 'default'");
+      const currentConfig = await get("SELECT homepage_video_url FROM site_config WHERE id = 'default'") as SiteConfig | undefined;
       if (currentConfig && !currentConfig.homepage_video_url) {
         await run(`
           UPDATE site_config

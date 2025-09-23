@@ -2,6 +2,7 @@ import React from 'react';
 import { Header } from '../components/layout/header';
 import { getDocsNavigation } from '@/lib/docs';
 import { DocsSidebar } from '@/components/docs/docs-sidebar';
+import BackToTop from '../components/BackToTop';
 
 interface DocsLayoutProps {
   children: React.ReactNode;
@@ -21,6 +22,7 @@ export default function DocsLayout({ children }: DocsLayoutProps) {
           </main>
         </div>
       </div>
+      <BackToTop />
     </div>
   );
 }

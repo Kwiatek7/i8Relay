@@ -5,6 +5,7 @@ import { ThemeProvider } from "./providers/theme-provider";
 import { AuthProvider } from "../lib/auth-context";
 import { ConfigProvider } from "../lib/providers/config-provider";
 import { getSiteConfig } from "../lib/config-utils";
+import BackToTop from "./components/BackToTop";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -59,6 +60,7 @@ export default function RootLayout({
             </AuthProvider>
           </ConfigProvider>
         </ThemeProvider>
+        <BackToTop />
       </body>
     </html>
   );
