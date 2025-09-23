@@ -16,6 +16,7 @@ interface SiteConfig {
   company_address: string;
   footer_text: string;
   enable_registration: boolean;
+  homepage_video_url?: string;
 
   // SMTP邮件配置
   smtp_enabled: boolean;
@@ -244,6 +245,22 @@ export default function AdminConfig() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     placeholder="https://example.com/logo.png"
                   />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    首页演示视频链接
+                  </label>
+                  <input
+                    type="url"
+                    value={config.homepage_video_url || ''}
+                    onChange={(e) => handleChange('homepage_video_url', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    请输入YouTube嵌入链接，格式：https://www.youtube.com/embed/视频ID，留空使用默认视频
+                  </p>
                 </div>
               </div>
             </div>

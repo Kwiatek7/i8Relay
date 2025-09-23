@@ -138,8 +138,8 @@ export default function Home() {
             <div className="aspect-video rounded-xl bg-gray-900 shadow-2xl">
               <iframe
                 className="w-full h-full rounded-xl"
-                src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                title="i8Relay Demo"
+                src={config.homepage_video_url || "https://www.youtube.com/embed/dQw4w9WgXcQ"}
+                title={`${config.site_name} Demo`}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               />

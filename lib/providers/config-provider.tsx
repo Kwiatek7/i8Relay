@@ -15,6 +15,7 @@ interface SiteConfig {
   company_address: string;
   footer_text: string;
   enable_registration: boolean;
+  homepage_video_url?: string;
 }
 
 interface ConfigContextType {
@@ -53,7 +54,8 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
           contact_email: 'support@i8relay.com',
           company_address: '',
           footer_text: '© 2025 i8Relay. All rights reserved.',
-          enable_registration: true
+          enable_registration: true,
+          homepage_video_url: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
         };
         setConfig(defaultConfig);
       }
@@ -71,7 +73,8 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
         contact_email: 'support@i8relay.com',
         company_address: '',
         footer_text: '© 2024 i8Relay. All rights reserved.',
-        enable_registration: true
+        enable_registration: true,
+        homepage_video_url: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
       };
       setConfig(defaultConfig);
     } finally {

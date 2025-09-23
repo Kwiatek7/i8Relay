@@ -18,7 +18,8 @@ export async function GET() {
       secondary_color: siteConfig.theme_secondary_color,
       contact_email: siteConfig.contact_email,
       footer_text: siteConfig.footer_text,
-      enable_registration: siteConfig.enable_registration
+      enable_registration: siteConfig.enable_registration,
+      homepage_video_url: siteConfig.homepage_video_url
     };
 
     return NextResponse.json({
@@ -39,7 +40,8 @@ export async function GET() {
       secondary_color: '#8b5cf6',
       contact_email: 'support@i8relay.com',
       footer_text: '© 2025 i8Relay. All rights reserved.',
-      enable_registration: true
+      enable_registration: true,
+      homepage_video_url: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
     };
 
     return NextResponse.json({

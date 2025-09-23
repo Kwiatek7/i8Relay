@@ -29,6 +29,7 @@ export interface SiteConfig {
   homepage_hero_title?: string;
   homepage_hero_subtitle?: string;
   homepage_features?: any[];
+  homepage_video_url?: string;  // 首页演示视频链接
   footer_text?: string;
 }
 
@@ -180,7 +181,8 @@ export class ConfigModel extends BaseModel {
         theme_secondary_color: '#8b5cf6',
         enable_registration: true,
         enable_payment: true,
-        enable_api_docs: true
+        enable_api_docs: true,
+        homepage_video_url: 'https://www.youtube.com/embed/dQw4w9WgXcQ'
       };
     }
 
@@ -204,6 +206,7 @@ export class ConfigModel extends BaseModel {
       homepage_hero_title: siteConfig.homepage_hero_title,
       homepage_hero_subtitle: siteConfig.homepage_hero_subtitle,
       homepage_features: features,
+      homepage_video_url: siteConfig.homepage_video_url,
       footer_text: siteConfig.footer_text
     };
   }
