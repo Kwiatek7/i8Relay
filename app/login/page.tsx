@@ -1,14 +1,14 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { User, Lock, Mail, Eye, EyeOff } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { User, Lock, Mail, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../lib/auth-context';
 import { Header } from '../components/layout/header';
 import { useConfig } from '../../lib/providers/config-provider';
 
-export default function LoginPage() {
+function LoginForm() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -17,10 +17,22 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [localError, setLocalError] = useState('');
   const [loginSuccess, setLoginSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const { login, loading, error, clearError, user, isAuthenticated } = useAuth();
   const { config } = useConfig();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // 处理查询参数中的消息
+  useEffect(() => {
+    const message = searchParams.get('message');
+    if (message === 'password_reset_success') {
+      setSuccessMessage('密码重置成功！请使用新密码登录。');
+      // 5秒后清除消息
+      setTimeout(() => setSuccessMessage(''), 5000);
+    }
+  }, [searchParams]);
 
   // 监听用户状态变化，登录成功后根据角色重定向
   useEffect(() => {
@@ -143,6 +155,14 @@ export default function LoginPage() {
             </h1>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* 成功提示 */}
+              {successMessage && (
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 px-4 py-3 rounded-lg text-sm flex items-center">
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  {successMessage}
+                </div>
+              )}
+
               {/* 错误提示 */}
               {(error || localError) && (
                 <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg text-sm">
@@ -260,5 +280,22 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// 加载中占位符
+function LoadingPlaceholder() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoadingPlaceholder />}>
+      <LoginForm />
+    </Suspense>
   );
 }
