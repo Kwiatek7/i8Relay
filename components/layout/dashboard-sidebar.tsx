@@ -88,7 +88,7 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
       {/* 侧边栏 */}
       <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-white dark:bg-gray-900 shadow-2xl border-r border-gray-200 dark:border-gray-800 transform ${
         isOpen ? 'translate-x-0' : '-translate-x-full'
-      } transition-all duration-300 ease-in-out lg:translate-x-0`}>
+      } transition-all duration-300 ease-in-out lg:translate-x-0 flex flex-col`}>
 
         {/* 头部Logo区域 */}
         <div className="relative flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-gray-800 bg-gradient-to-r from-blue-600 to-purple-600">
@@ -114,7 +114,7 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
         </div>
 
         {/* 用户信息卡片 */}
-        <div className="px-4 py-4">
+        <div className="px-4 py-4 flex-shrink-0">
           <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
@@ -147,7 +147,7 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
         </div>
 
         {/* 导航菜单 */}
-        <nav className="px-4 pb-4 flex-1 overflow-y-auto">
+        <nav className="px-4 pb-4 flex-1 overflow-y-auto min-h-0">
           <div className="space-y-1">
             {menuItems.map((item, index) => {
               const isActive = pathname === item.path;
@@ -202,7 +202,7 @@ export function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
         </nav>
 
         {/* 底部退出按钮 */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-800">
+        <div className="p-4 border-t border-gray-200 dark:border-gray-800 flex-shrink-0">
           <Button
             variant="ghost"
             onClick={handleLogout}

@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { configModel } from '../../../lib/database/models/config';
 
+// 强制动态渲染，防止静态生成时的数据库访问问题
+export const dynamic = 'force-dynamic';
+
 // 获取公开的网站配置
 export async function GET() {
   try {

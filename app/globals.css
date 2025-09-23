@@ -1,6 +1,10 @@
 @import "tailwindcss";
 
 @layer base {
+  /* Font configuration with robust fallbacks */
+  .font-sans {
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  }
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;

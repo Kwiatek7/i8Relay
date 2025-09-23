@@ -1,18 +1,10 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "./providers/theme-provider";
 import { AuthProvider } from "../lib/auth-context";
 import { ConfigProvider } from "../lib/providers/config-provider";
 import { getSiteConfig } from "../lib/config-utils";
 import BackToTop from "./components/BackToTop";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: 'swap',
-  fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif']
-});
 
 export async function generateMetadata(): Promise<Metadata> {
   const config = await getSiteConfig();
@@ -49,8 +41,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body
-        className={`${inter.variable} font-sans antialiased`}
+        className="font-sans antialiased"
         suppressHydrationWarning={true}
       >
         <ThemeProvider>
