@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  i8relay:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: i8relay-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      # 数据持久化
+      - ./data:/app/data
+      # 可选：挂载配置文件
+      - ./.env.production:/app/.env.local:ro
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=sqlite:./data/aiporxy.db
+      - NEXT_TELEMETRY_DISABLED=1
+    networks:
+      - i8relay-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # 可选：Nginx 反向代理
+  nginx:
+    image: nginx:alpine
+    container_name: i8relay-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      - i8relay
+    networks:
+      - i8relay-network
+    profiles:
+      - with-nginx
+
+networks:
+  i8relay-network:
+    driver: bridge
+
+volumes:
+  i8relay-data:
+    driver: local

@@ -215,12 +215,96 @@ npm start
 ```
 
 ### Docker 部署
-```bash
-# 构建镜像
-docker build -t aiporxy .
 
-# 运行容器
-docker run -p 3000:3000 aiporxy
+#### 方式一：使用 Docker Compose（推荐）
+
+1. **准备环境文件**
+```bash
+# 复制环境变量示例文件
+cp .env.example .env.production
+
+# 编辑环境变量
+vim .env.production
+```
+
+2. **启动服务**
+```bash
+# 构建并启动应用
+docker-compose up -d
+
+# 查看运行状态
+docker-compose ps
+
+# 查看日志
+docker-compose logs -f i8relay
+```
+
+3. **使用 Nginx 反向代理（可选）**
+```bash
+# 复制 Nginx 配置示例
+cp nginx.conf.example nginx.conf
+
+# 编辑配置文件，修改域名和SSL证书路径
+vim nginx.conf
+
+# 启动包含 Nginx 的完整服务
+docker-compose --profile with-nginx up -d
+```
+
+#### 方式二：使用 Docker 命令
+
+1. **构建镜像**
+```bash
+# 构建应用镜像
+docker build -t i8relay:latest .
+```
+
+2. **运行容器**
+```bash
+# 创建数据目录
+mkdir -p ./data
+
+# 运行容器（基础版本）
+docker run -d \
+  --name i8relay-app \
+  -p 3000:3000 \
+  -v $(pwd)/data:/app/data \
+  -e NODE_ENV=production \
+  -e DATABASE_URL=sqlite:./data/aiporxy.db \
+  --restart unless-stopped \
+  i8relay:latest
+```
+
+3. **完整配置运行**
+```bash
+# 使用环境文件运行
+docker run -d \
+  --name i8relay-app \
+  -p 3000:3000 \
+  -v $(pwd)/data:/app/data \
+  -v $(pwd)/.env.production:/app/.env.local:ro \
+  --restart unless-stopped \
+  i8relay:latest
+```
+
+#### 数据备份
+
+```bash
+# 备份数据库
+docker exec i8relay-app cp /app/data/aiporxy.db /app/data/backup-$(date +%Y%m%d).db
+
+# 复制备份到宿主机
+docker cp i8relay-app:/app/data/backup-$(date +%Y%m%d).db ./backup/
+```
+
+#### 健康检查
+
+```bash
+# 检查应用健康状态
+curl http://localhost:3000/api/health
+
+# 查看容器健康状态
+docker inspect --format='{{json .State.Health}}' i8relay-app
 ```
 
 ### 环境变量配置
@@ -235,43 +319,6 @@ JWT_REFRESH_SECRET=your-refresh-token-secret
 # 网站配置
 NEXT_PUBLIC_SITE_URL=https://your-domain.com
 ```
-
-## 🧪 测试
-
-### 运行测试
-```bash
-# 类型检查
-npm run type-check
-
-# 代码检查
-npm run lint
-
-# 格式化代码
-npm run format
-
-# 单元测试
-npm run test
-
-# 端到端测试
-npm run test:e2e
-
-# 测试覆盖率
-npm run test:coverage
-```
-
-## 📈 监控与日志
-
-### 使用统计
-- 实时 API 调用监控
-- Token 使用量统计
-- 成本分析和预警
-- 用户行为分析
-
-### 系统监控
-- 性能指标监控
-- 错误日志记录
-- 数据库性能分析
-- 安全事件记录
 
 ## 🔧 开发指南
 
@@ -325,11 +372,6 @@ aiporxy/
 4. 推送到分支
 5. 创建 Pull Request
 
-## 🙏 致谢声明
-
-本项目核心架构和设计理念参考并抄袭了 [i7dc.com](https://i7dc.com/) 的 **i7relay** 项目。
-
-
 ## 📄 许可证
 
 本项目采用 MIT 许可证。详见 [LICENSE](LICENSE) 文件。
@@ -337,9 +379,8 @@ aiporxy/
 ## 🤝 支持
 
 - **文档**: [在线文档](https://docs.example.com)
-- **问题反馈**: [GitHub Issues](https://github.com/username/aiporxy/issues)
+- **问题反馈**: [GitHub Issues](https://github.com/7836246/i8Relay/issues)
 - **邮箱支持**: support@i8relay.com
-- **微信群**: 扫码加入开发者交流群
 
 ## 🎯 路线图
 
@@ -361,27 +402,7 @@ aiporxy/
 - [ ] 微服务架构
 - [ ] 容器化部署
 
-## 🌟 更新日志
-
-### v2.0.0 (最新)
-- ✨ 全新的现代化UI界面
-- 🎨 基于shadcn/ui的组件库
-- 📊 ECharts数据可视化
-- 🔔 完整的通知系统
-- 🌙 深色模式支持
-- 📱 响应式布局优化
-- 🛠️ 统一的布局系统
-
-### v1.0.0
-- 🚀 项目初始版本
-- 👤 用户认证系统
-- 💳 套餐管理功能
-- 📈 基础数据统计
-- 🛡️ 管理后台
-
----
 
 **⭐ 如果这个项目对你有帮助，请给它一个星标！**
 
 > 构建一个更智能的 AI API 中转平台 🚀# i8Relay
-# i8Relay
