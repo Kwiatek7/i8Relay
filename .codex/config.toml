@@ -1,0 +1,11 @@
+model_provider = "crs"
+model = "gpt-5-codex"
+model_reasoning_effort = "high"
+disable_response_storage = true
+preferred_auth_method = "apikey"
+[model_providers.crs]
+name = "crs"
+base_url = "http://45.205.25.65:2300/openai"
+wire_api = "responses"
+requires_openai_auth = true
+env_key = "cr_b49e1ce0ed9125c5c221854b1a86f11e5371b45f5986b20bdbd4c5fc1467534b"

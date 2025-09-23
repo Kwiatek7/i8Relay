@@ -1,0 +1,581 @@
+'use client';
+
+import { useEffect, useState, useCallback } from 'react';
+import { useAuth } from '../../lib/auth-context';
+import { useConfig } from '../../lib/providers/config-provider';
+import { useRouter } from 'next/navigation';
+import { Header } from '../components/layout/header';
+import { Footer } from '../components/layout/footer';
+import { Button } from '../components/ui/button';
+import { Check, ArrowRight, Code, Zap, Globe, Building, Package, Star, Crown } from 'lucide-react';
+
+interface Plan {
+  id: string;
+  name: string;
+  price: number;
+  billing_period: string;
+  features: string[];
+  tokens_limit: number;
+  requests_limit: number;
+  is_popular: boolean;
+  is_active: boolean;
+  sort_order: number;
+  category_id?: string;
+  category_name?: string;
+}
+
+interface PlanGroup {
+  id: string;
+  name: string;
+  display_name: string;
+  description?: string;
+  icon?: string;
+  color: string;
+  sort_order: number;
+  is_featured: boolean;
+  plans: Plan[];
+}
+
+const getIconComponent = (iconName?: string) => {
+  switch (iconName) {
+    case 'Code': return Code;
+    case 'Zap': return Zap;
+    case 'Globe': return Globe;
+    case 'Building': return Building;
+    case 'Package': return Package;
+    default: return Package;
+  }
+};
+
+export default function PricingPage() {
+  const [groupedPlans, setGroupedPlans] = useState<PlanGroup[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [purchasing, setPurchasing] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>('all');
+  const { user, isAuthenticated } = useAuth();
+  const { config } = useConfig();
+  const router = useRouter();
+
+  const fetchGroupedPlans = useCallback(async () => {
+    try {
+      const response = await fetch('/api/plans?grouped=true');
+      if (response.ok) {
+        const data = await response.json();
+        setGroupedPlans(data.data);
+        // 设置默认选中第一个特色分组
+        const featuredGroup = data.data.find((group: PlanGroup) => group.is_featured);
+        if (featuredGroup) {
+          setActiveTab(featuredGroup.id);
+        }
+      }
+    } catch (error) {
+      console.error('获取套餐列表失败:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchGroupedPlans();
+  }, [fetchGroupedPlans]);
+
+  if (!config) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  const handlePurchase = async (planId: string) => {
+    if (!isAuthenticated) {
+      router.push('/login?redirect=/pricing');
+      return;
+    }
+
+    setPurchasing(planId);
+
+    try {
+      const response = await fetch('/api/billing/subscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          plan_id: planId,
+          payment_method: 'balance',
+        }),
+      });
+
+      if (response.ok) {
+        alert('购买成功！');
+        window.location.reload();
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error?.message || '购买失败');
+      }
+    } catch (error) {
+      console.error('购买套餐失败:', error);
+      alert('购买失败，请稍后重试');
+    } finally {
+      setPurchasing(null);
+    }
+  };
+
+  const formatPrice = (price: number, period: string) => {
+    const periodText = period === 'monthly' ? '/月' : period === 'yearly' ? '/年' : '';
+    return `¥${price}${periodText}`;
+  };
+
+  const getPeriodText = (period: string) => {
+    switch (period) {
+      case 'monthly': return '月付';
+      case 'yearly': return '年付';
+      case 'one_time': return '一次性';
+      default: return period;
+    }
+  };
+
+  const isCurrentPlan = (planName: string) => {
+    return user?.plan === planName;
+  };
+
+  const featuredGroups = groupedPlans.filter(group => group.is_featured);
+  const regularGroups = groupedPlans.filter(group => !group.is_featured);
+  const activeGroup = groupedPlans.find(group => group.id === activeTab);
+
+  const faqs = [
+    {
+      question: "什么是Token？如何计算消耗？",
+      answer: "Token是AI模型处理文本的基本单位。通常1个中文字符约等于2-3个Token，1个英文单词约等于1-2个Token。系统会实时统计您的使用量。"
+    },
+    {
+      question: "支持哪些支付方式？",
+      answer: "我们支持支付宝、微信支付、银行卡等多种支付方式。企业用户还可以选择对公转账和月结服务。"
+    },
+    {
+      question: "如何升级或降级套餐？",
+      answer: "您可以随时在用户中心升级套餐，升级后立即生效。降级需要在当前周期结束后生效，避免服务中断。"
+    },
+    {
+      question: "API调用有频率限制吗？",
+      answer: "不同套餐有不同的频率限制。基础版每分钟最多60次调用，标准版每分钟300次，专业版每分钟1000次。"
+    },
+    {
+      question: "数据安全如何保障？",
+      answer: "我们采用企业级加密技术，所有数据传输使用SSL加密。严格遵循数据保护法规，定期进行安全审计。"
+    },
+    {
+      question: "是否提供技术支持？",
+      answer: "是的，我们提供多层次技术支持。基础版提供邮件支持，标准版及以上提供工单系统，专业版提供24/7专属支持。"
+    }
+  ];
+
+  return (
+    <div className="bg-white dark:bg-gray-900 transition-colors duration-300">
+      <Header />
+
+      <div className="py-16 px-5 mt-14">
+        {/* 页面标题区域 */}
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+              灵活的<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">定价方案</span>
+            </h1>
+            <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+              选择最适合您需求的套餐，从个人开发者到企业团队，我们都有完美的解决方案
+            </p>
+          </div>
+
+          {/* 用户当前套餐信息 */}
+          {isAuthenticated && user && (
+            <div className="mb-12 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="p-3 bg-blue-100 dark:bg-blue-800 rounded-lg">
+                    <Crown className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100">
+                      当前套餐: {user.plan}
+                    </h3>
+                    <p className="text-blue-700 dark:text-blue-300">
+                      账户余额: ¥{user.balance.toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => {
+                    if (user.role === 'admin' || user.role === 'super_admin') {
+                      router.push('/admin');
+                    } else {
+                      router.push('/dashboard');
+                    }
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  查看详情
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* 加载状态 */}
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-4 text-gray-500 dark:text-gray-400">加载中...</p>
+            </div>
+          ) : (
+            <>
+              {/* 套餐分组标签 */}
+              {groupedPlans.length > 0 && (
+                <div className="mb-12">
+                  <div className="flex flex-wrap justify-center gap-4">
+                    <button
+                      onClick={() => setActiveTab('all')}
+                      className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                        activeTab === 'all'
+                          ? 'bg-blue-600 text-white shadow-lg'
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      全部套餐
+                    </button>
+                    {featuredGroups.map((group) => {
+                      const IconComponent = getIconComponent(group.icon);
+                      return (
+                        <button
+                          key={group.id}
+                          onClick={() => setActiveTab(group.id)}
+                          className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 ${
+                            activeTab === group.id
+                              ? 'text-white shadow-lg'
+                              : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                          }`}
+                          style={{
+                            backgroundColor: activeTab === group.id ? group.color : undefined,
+                          }}
+                        >
+                          <IconComponent className="h-4 w-4" />
+                          <span>{group.display_name}</span>
+                          {group.is_featured && <Star className="h-4 w-4" />}
+                        </button>
+                      );
+                    })}
+                    {regularGroups.map((group) => {
+                      const IconComponent = getIconComponent(group.icon);
+                      return (
+                        <button
+                          key={group.id}
+                          onClick={() => setActiveTab(group.id)}
+                          className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 ${
+                            activeTab === group.id
+                              ? 'text-white shadow-lg'
+                              : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                          }`}
+                          style={{
+                            backgroundColor: activeTab === group.id ? group.color : undefined,
+                          }}
+                        >
+                          <IconComponent className="h-4 w-4" />
+                          <span>{group.display_name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* 套餐展示区域 */}
+              <div className="mb-16">
+                {activeTab === 'all' ? (
+                  // 显示所有分组
+                  <div className="space-y-16">
+                    {groupedPlans.map((group) => {
+                      const IconComponent = getIconComponent(group.icon);
+                      return (
+                        <div key={group.id} className="space-y-8">
+                          {/* 分组头部 */}
+                          <div className="text-center">
+                            <div
+                              className="inline-flex items-center space-x-3 px-6 py-3 rounded-xl text-white mb-4"
+                              style={{ backgroundColor: group.color }}
+                            >
+                              <IconComponent className="h-6 w-6" />
+                              <span className="text-xl font-bold">{group.display_name}</span>
+                              {group.is_featured && <Star className="h-5 w-5" />}
+                            </div>
+                            {group.description && (
+                              <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                                {group.description}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* 分组套餐卡片 */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {group.plans.map((plan) => (
+                              <PlanCard
+                                key={plan.id}
+                                plan={plan}
+                                groupColor={group.color}
+                                isCurrentPlan={isCurrentPlan(plan.name)}
+                                onPurchase={handlePurchase}
+                                purchasing={purchasing}
+                                getPeriodText={getPeriodText}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  // 显示选中的分组
+                  activeGroup && (
+                    <div className="space-y-8">
+                      {/* 分组头部 */}
+                      <div className="text-center">
+                        <div
+                          className="inline-flex items-center space-x-3 px-8 py-4 rounded-xl text-white mb-6"
+                          style={{ backgroundColor: activeGroup.color }}
+                        >
+                          {(() => {
+                            const IconComponent = getIconComponent(activeGroup.icon);
+                            return <IconComponent className="h-8 w-8" />;
+                          })()}
+                          <span className="text-2xl font-bold">{activeGroup.display_name}</span>
+                          {activeGroup.is_featured && <Star className="h-6 w-6" />}
+                        </div>
+                        {activeGroup.description && (
+                          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+                            {activeGroup.description}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* 分组套餐卡片 */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-center">
+                        {activeGroup.plans.map((plan) => (
+                          <PlanCard
+                            key={plan.id}
+                            plan={plan}
+                            groupColor={activeGroup.color}
+                            isCurrentPlan={isCurrentPlan(plan.name)}
+                            onPurchase={handlePurchase}
+                            purchasing={purchasing}
+                            getPeriodText={getPeriodText}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )
+                )}
+
+                {groupedPlans.length === 0 && (
+                  <div className="text-center py-12">
+                    <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500 dark:text-gray-400">暂无可用套餐</p>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* 登录提示 */}
+          {!isAuthenticated && (
+            <div className="mb-12 text-center bg-gray-50 dark:bg-gray-800 rounded-xl p-8">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                开启您的AI之旅
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                需要登录才能购买套餐，体验强大的AI服务
+              </p>
+              <Button
+                onClick={() => router.push('/login?redirect=/pricing')}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                立即登录
+              </Button>
+            </div>
+          )}
+
+          {/* 常见问题 */}
+          <div className="mb-16">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white text-center mb-12">常见问题</h2>
+            <div className="max-w-4xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {faqs.map((faq, index) => (
+                  <div
+                    key={index}
+                    className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 hover:shadow-lg transition-shadow duration-200"
+                  >
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
+                      {faq.question}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                      {faq.answer}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* 最终号召性用语 */}
+          <div className="text-center bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-8 text-white">
+            <h2 className="text-3xl font-bold mb-4">
+              立即开始您的AI之旅
+            </h2>
+            <p className="text-lg mb-6 opacity-90">
+              选择最适合的套餐，享受强大的AI服务
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button className="bg-white text-blue-600 hover:bg-gray-100">
+                免费试用
+              </Button>
+              <Button className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-blue-600">
+                联系销售
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <Footer />
+    </div>
+  );
+}
+
+// 套餐卡片组件
+interface PlanCardProps {
+  plan: Plan;
+  groupColor: string;
+  isCurrentPlan: boolean;
+  onPurchase: (planId: string) => void;
+  purchasing: string | null;
+  getPeriodText: (period: string) => string;
+}
+
+function PlanCard({ plan, groupColor, isCurrentPlan, onPurchase, purchasing, getPeriodText }: PlanCardProps) {
+  return (
+    <div
+      className={`relative rounded-xl border p-6 h-full flex flex-col transition-all duration-300 hover:shadow-xl hover:scale-105 ${
+        isCurrentPlan
+          ? 'border-2 shadow-lg ring-2'
+          : plan.is_popular
+          ? 'border-2 shadow-lg'
+          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
+      }`}
+      style={{
+        borderColor: isCurrentPlan || plan.is_popular ? groupColor : undefined,
+        backgroundColor: isCurrentPlan
+          ? `${groupColor}10`
+          : plan.is_popular
+          ? `${groupColor}05`
+          : undefined,
+      }}
+    >
+      {/* 套餐标签 */}
+      {isCurrentPlan && (
+        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+          <span
+            className="text-white px-4 py-1 rounded-full text-sm font-medium"
+            style={{ backgroundColor: groupColor }}
+          >
+            当前套餐
+          </span>
+        </div>
+      )}
+
+      {plan.is_popular && !isCurrentPlan && (
+        <div className="absolute -top-3 right-4">
+          <span
+            className="text-white px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1"
+            style={{ backgroundColor: groupColor }}
+          >
+            <Star className="h-3 w-3" />
+            <span>推荐</span>
+          </span>
+        </div>
+      )}
+
+      <div className="text-center mb-6">
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+          {plan.name}
+        </h3>
+        <div className="flex items-baseline justify-center mb-2">
+          <span className="text-3xl font-bold text-gray-900 dark:text-white">
+            ¥{plan.price}
+          </span>
+          <span className="text-gray-600 dark:text-gray-400 ml-1">
+            {plan.billing_period === 'monthly' ? '/月' :
+             plan.billing_period === 'yearly' ? '/年' : ''}
+          </span>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          {getPeriodText(plan.billing_period)}
+        </p>
+      </div>
+
+      {/* 套餐限制 */}
+      <div className="mb-6">
+        <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">配额限制</h4>
+        <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+          <li className="flex items-center">
+            <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+            {plan.tokens_limit ? plan.tokens_limit.toLocaleString() : '无限制'} Tokens
+          </li>
+          <li className="flex items-center">
+            <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+            {plan.requests_limit ? plan.requests_limit.toLocaleString() : '无限制'} 次请求
+          </li>
+        </ul>
+      </div>
+
+      {/* 套餐特性 */}
+      {plan.features && plan.features.length > 0 && (
+        <div className="mb-6 flex-grow">
+          <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">套餐特性</h4>
+          <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+            {plan.features.map((feature, index) => (
+              <li key={index} className="flex items-center">
+                <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                {feature}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* 购买按钮 */}
+      <div className="mt-auto">
+        {isCurrentPlan ? (
+          <Button
+            disabled
+            className="w-full bg-gray-300 text-gray-500 cursor-not-allowed"
+          >
+            当前套餐
+          </Button>
+        ) : (
+          <Button
+            onClick={() => onPurchase(plan.id)}
+            disabled={purchasing === plan.id}
+            className={`w-full ${
+              purchasing === plan.id
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'text-white hover:opacity-90'
+            }`}
+            style={{
+              backgroundColor: purchasing === plan.id ? undefined : groupColor,
+            }}
+          >
+            {purchasing === plan.id ? '购买中...' : '立即购买'}
+            {purchasing !== plan.id && <ArrowRight className="h-4 w-4 ml-2" />}
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}

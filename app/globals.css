@@ -1,26 +1,173 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 84% 4.9%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 84% 4.9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 84% 4.9%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 94.1%;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: var(--font-inter), sans-serif;
+  }
+
+  /* 强制设置根元素背景 */
+  html {
+    background-color: #ffffff;
+  }
+
+  html.dark {
+    background-color: #111827;
+  }
+}
+
+/* 确保Tailwind的颜色类可以正常工作 */
+.bg-white {
+  background-color: #ffffff !important;
+}
+
+.dark .bg-gray-900,
+.dark .dark\:bg-gray-900 {
+  background-color: #111827 !important;
+}
+
+.text-gray-900 {
+  color: #111827;
+}
+
+.dark .text-white,
+.dark .dark\:text-white {
+  color: #ffffff !important;
+}
+
+.text-gray-600 {
+  color: #4b5563;
+}
+
+.dark .text-gray-300,
+.dark .dark\:text-gray-300 {
+  color: #d1d5db !important;
+}
+
+.text-gray-700 {
+  color: #374151;
+}
+
+.dark .text-gray-400,
+.dark .dark\:text-gray-400 {
+  color: #9ca3af !important;
+}
+
+.bg-gray-100 {
+  background-color: #f3f4f6;
+}
+
+.dark .bg-gray-800,
+.dark .dark\:bg-gray-800 {
+  background-color: #1f2937 !important;
+}
+
+.bg-gray-50 {
+  background-color: #f9fafb;
+}
+
+.border-gray-200 {
+  border-color: #e5e7eb;
+}
+
+.dark .border-gray-700,
+.dark .dark\:border-gray-700 {
+  border-color: #374151 !important;
+}
+
+.dark .border-gray-800,
+.dark .dark\:border-gray-800 {
+  border-color: #1f2937 !important;
+}
+
+/* 确保背景透明度也正确工作 */
+.bg-white\/80 {
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+.dark .bg-gray-900\/80,
+.dark .dark\:bg-gray-900\/80 {
+  background-color: rgba(17, 24, 39, 0.8) !important;
+}
+
+/* 确保卡片背景切换 */
+.bg-white {
+  background-color: #ffffff;
+}
+
+.dark .bg-white,
+.dark .dark\:bg-white {
+  background-color: #1f2937 !important;
+}
+
+/* 特殊处理一些可能被覆盖的背景 */
+.dark {
+  color-scheme: dark;
+}
+
+/* 自定义样式 */
+.gradient-bg {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.glass-effect {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass-effect {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }

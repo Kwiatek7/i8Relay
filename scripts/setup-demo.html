@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>初始化演示账号</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        .success {
+            background: #10b981;
+            color: white;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 10px 0;
+            display: none;
+        }
+        .accounts {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-family: monospace;
+            display: none;
+        }
+        h1 { color: #1f2937; }
+        h2 { color: #374151; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 AI代理演示账号初始化</h1>
+
+        <p>点击下面的按钮来创建演示登录账号：</p>
+
+        <button onclick="initDemoUsers()">创建演示账号</button>
+        <button onclick="clearUsers()">清空所有账号</button>
+        <button onclick="showCurrentUsers()">查看当前账号</button>
+
+        <div id="success" class="success">
+            ✅ 演示账号创建成功！请返回登录页面使用以下账号登录：
+        </div>
+
+        <div id="accounts" class="accounts">
+            <h3>📝 可用登录账号：</h3>
+            <div>邮箱: admin@demo.com  | 密码: password123 | 套餐: pro (管理员)</div>
+            <div>邮箱: user@demo.com   | 密码: password123 | 套餐: basic (普通用户)</div>
+            <div>邮箱: dev@demo.com    | 密码: password123 | 套餐: free (开发者)</div>
+        </div>
+
+        <div id="current-users"></div>
+
+        <h2>🔧 使用说明：</h2>
+        <ol>
+            <li>点击"创建演示账号"按钮</li>
+            <li>返回登录页面: <a href="/" target="_blank">http://localhost:3000/login</a></li>
+            <li>使用上面任意一个邮箱和密码 <code>password123</code> 登录</li>
+            <li>登录成功后将跳转到管理中心</li>
+        </ol>
+
+        <h2>⚠️ 注意事项：</h2>
+        <ul>
+            <li>这是开发模式，所有账号统一使用密码: <code>password123</code></li>
+            <li>数据存储在浏览器 localStorage 中</li>
+            <li>清除浏览器数据会删除所有账号</li>
+        </ul>
+    </div>
+
+    <script>
+        function initDemoUsers() {
+            const demoUsers = [
+                {
+                    id: 'demo-admin-001',
+                    username: '管理员',
+                    email: 'admin@demo.com',
+                    plan: 'pro',
+                    balance: 500.00,
+                    apiKey: 'sk-demo-admin-key-001',
+                    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=admin',
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                },
+                {
+                    id: 'demo-user-001',
+                    username: '演示用户',
+                    email: 'user@demo.com',
+                    plan: 'basic',
+                    balance: 100.00,
+                    apiKey: 'sk-demo-user-key-001',
+                    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=user',
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                },
+                {
+                    id: 'demo-dev-001',
+                    username: '开发者',
+                    email: 'dev@demo.com',
+                    plan: 'free',
+                    balance: 50.00,
+                    apiKey: 'sk-demo-dev-key-001',
+                    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=developer',
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                }
+            ];
+
+            localStorage.setItem('mock_users', JSON.stringify(demoUsers));
+
+            document.getElementById('success').style.display = 'block';
+            document.getElementById('accounts').style.display = 'block';
+
+            console.log('✅ 演示用户创建成功！');
+        }
+
+        function clearUsers() {
+            localStorage.removeItem('mock_users');
+            localStorage.removeItem('mock_current_user');
+            document.getElementById('success').style.display = 'none';
+            document.getElementById('accounts').style.display = 'none';
+            document.getElementById('current-users').innerHTML = '';
+            alert('所有账号已清空');
+        }
+
+        function showCurrentUsers() {
+            const users = JSON.parse(localStorage.getItem('mock_users') || '[]');
+            const container = document.getElementById('current-users');
+
+            if (users.length === 0) {
+                container.innerHTML = '<p>❌ 当前没有注册的用户</p>';
+            } else {
+                let html = '<h3>📋 当前注册用户：</h3><div class="accounts" style="display: block;">';
+                users.forEach(user => {
+                    html += `<div>邮箱: ${user.email} | 用户名: ${user.username} | 套餐: ${user.plan}</div>`;
+                });
+                html += '</div>';
+                container.innerHTML = html;
+            }
+        }
+    </script>
+</body>
+</html>
