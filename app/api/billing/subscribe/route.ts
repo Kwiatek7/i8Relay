@@ -3,11 +3,15 @@ import { authenticateRequest, createAuthResponse, createErrorResponse, AuthError
 import { planModel } from '../../../../lib/database/models/plan';
 import { userModel } from '../../../../lib/database/models/user';
 import { getDb } from '../../../../lib/database/connection';
+import { triggerPaymentFailedNotification, checkBalanceNotification } from '../../../../lib/notifications/triggers';
 
 export async function POST(request: NextRequest) {
+  let auth: any = null;
+  let plan: any = null;
+  
   try {
     // 验证用户身份
-    const auth = await authenticateRequest(request);
+    auth = await authenticateRequest(request);
 
     // 获取请求数据
     const { plan_id, payment_method } = await request.json();
@@ -22,7 +26,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 验证套餐存在且激活
-    const plan = await planModel.findPlanById(plan_id);
+    plan = await planModel.findPlanById(plan_id);
     if (!plan) {
       return createErrorResponse(new Error('套餐不存在'), 404);
     }
@@ -45,6 +49,16 @@ export async function POST(request: NextRequest) {
     // 验证支付方式和余额
     if (payment_method === 'balance') {
       if (user.balance < plan.price) {
+        // 异步触发余额不足通知
+        setImmediate(() => {
+          triggerPaymentFailedNotification(
+            auth.user.id,
+            plan.price,
+            `余额不足，当前余额：${user.balance}元，需要：${plan.price}元`
+          ).catch(error => {
+            console.warn('余额不足通知触发失败:', error);
+          });
+        });
         return createErrorResponse(new Error('账户余额不足'), 400);
       }
     } else {
@@ -92,6 +106,13 @@ export async function POST(request: NextRequest) {
         throw new Error('获取更新后的用户信息失败');
       }
 
+      // 异步检查新余额是否需要触发余额不足警告
+      setImmediate(() => {
+        checkBalanceNotification(auth.user.id, updatedUser.balance).catch(error => {
+          console.warn('余额检查通知触发失败:', error);
+        });
+      });
+
     // 返回成功响应
     return createAuthResponse({
       message: '套餐购买成功',
@@ -118,6 +139,19 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('套餐购买错误:', error);
+
+    // 异步触发支付失败通知（如果是认证后的错误）
+    if (auth?.user?.id) {
+      setImmediate(() => {
+        triggerPaymentFailedNotification(
+          auth.user.id,
+          plan?.price || 0,
+          error instanceof Error ? error.message : '支付处理失败'
+        ).catch(notifyError => {
+          console.warn('支付失败通知触发失败:', notifyError);
+        });
+      });
+    }
 
     if (error instanceof AuthError) {
       return createErrorResponse(error);

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { userModel, sessionModel } from '../../../../lib/database/models';
 import { jwtManager } from '../../../../lib/auth/jwt';
 import { createAuthResponse, createErrorResponse, AuthError } from '../../../../lib/auth/middleware';
+import { triggerLoginSecurityNotification } from '../../../../lib/notifications/triggers';
 import type { LoginRequest } from '../../../../lib/types';
 
 // 获取客户端信息
@@ -75,6 +76,18 @@ export async function POST(request: NextRequest) {
 
     // 更新用户最后登录时间
     await userModel.updateLastLogin(user.id);
+
+    // 异步触发登录安全检查（不影响登录流程）
+    setImmediate(() => {
+      triggerLoginSecurityNotification(
+        user.id,
+        new Date(),
+        clientInfo.ip_address?.split('.').slice(0, 2).join('.') + '.*.*' || '未知位置', // 简单的IP脱敏
+        clientInfo.ip_address || 'unknown'
+      ).catch(error => {
+        console.warn('登录安全通知触发失败:', error);
+      });
+    });
 
     // 创建响应
     const response = createAuthResponse({

@@ -13,7 +13,9 @@ import {
   UsageLog,
   DailySummary,
   UsageFilter,
-  PaginatedResponse
+  PaginatedResponse,
+  Notification,
+  NotificationFilter
 } from './types';
 
 // API配置 - 使用本地API
@@ -323,6 +325,190 @@ class ApiClient {
 
     const url = `/usage/daily${params.toString() ? `?${params.toString()}` : ''}`;
     return this.get<PaginatedResponse<DailySummary>>(url);
+  }
+
+  // 通知相关方法
+  async getNotifications(filter: NotificationFilter = {}): Promise<ApiResponse<PaginatedResponse<Notification>>> {
+    const params = new URLSearchParams();
+    if (filter.isRead !== undefined) params.append('is_read', filter.isRead.toString());
+    if (filter.type) params.append('type', filter.type);
+    if (filter.priority) params.append('priority', filter.priority);
+    if (filter.search) params.append('search', filter.search);
+    if (filter.page) params.append('page', filter.page.toString());
+    if (filter.pageSize) params.append('page_size', filter.pageSize.toString());
+
+    const url = `/notifications${params.toString() ? `?${params.toString()}` : ''}`;
+    return this.get<PaginatedResponse<Notification>>(url);
+  }
+
+  async createNotification(data: {
+    title: string;
+    message: string;
+    type?: string;
+    priority?: string;
+    actionUrl?: string;
+    targetUserId?: string;
+  }): Promise<ApiResponse<Notification>> {
+    return this.post<Notification>('/notifications', data);
+  }
+
+  async markNotificationAsRead(notificationId: string): Promise<ApiResponse<Notification>> {
+    return this.put<Notification>(`/notifications/${notificationId}`, { isRead: true });
+  }
+
+  async markNotificationAsUnread(notificationId: string): Promise<ApiResponse<Notification>> {
+    return this.put<Notification>(`/notifications/${notificationId}`, { isRead: false });
+  }
+
+  async deleteNotification(notificationId: string): Promise<ApiResponse<void>> {
+    return this.delete<void>(`/notifications/${notificationId}`);
+  }
+
+  async markAllNotificationsAsRead(): Promise<ApiResponse<{ success: boolean; updatedCount: number }>> {
+    return this.post<{ success: boolean; updatedCount: number }>('/notifications/mark-all-read');
+  }
+
+  async clearAllNotifications(): Promise<ApiResponse<{ success: boolean; deletedCount: number }>> {
+    return this.delete<{ success: boolean; deletedCount: number }>('/notifications/clear-all');
+  }
+
+  async getUnreadNotificationCount(): Promise<ApiResponse<{ count: number }>> {
+    return this.get<{ count: number }>('/notifications/unread-count');
+  }
+
+  // 管理员通知相关方法
+  async getAdminNotifications(filter: {
+    page?: number;
+    pageSize?: number;
+    userId?: string;
+    type?: string;
+    priority?: string;
+    search?: string;
+  } = {}): Promise<ApiResponse<PaginatedResponse<Notification & { user: { username: string; email: string } }>>> {
+    const params = new URLSearchParams();
+    if (filter.page) params.append('page', filter.page.toString());
+    if (filter.pageSize) params.append('page_size', filter.pageSize.toString());
+    if (filter.userId) params.append('user_id', filter.userId);
+    if (filter.type) params.append('type', filter.type);
+    if (filter.priority) params.append('priority', filter.priority);
+    if (filter.search) params.append('search', filter.search);
+
+    const url = `/admin/notifications${params.toString() ? `?${params.toString()}` : ''}`;
+    return this.get<PaginatedResponse<Notification & { user: { username: string; email: string } }>>(url);
+  }
+
+  async createAdminNotification(data: {
+    title: string;
+    message: string;
+    type?: string;
+    priority?: string;
+    actionUrl?: string;
+    targetUsers?: string[];
+    sendToAll?: boolean;
+  }): Promise<ApiResponse<{ success: boolean; createdCount: number; targetCount: number }>> {
+    return this.post<{ success: boolean; createdCount: number; targetCount: number }>('/admin/notifications', data);
+  }
+
+  async getAllUsers(): Promise<ApiResponse<Array<{ id: string; username: string; email: string; status: string; createdAt: string }>>> {
+    return this.get<Array<{ id: string; username: string; email: string; status: string; createdAt: string }>>('/admin/notifications/users');
+  }
+
+  // 通知规则管理相关方法
+  async getNotificationRules(filter?: {
+    type?: string;
+    enabled?: boolean;
+  }): Promise<ApiResponse<Array<any>>> {
+    const params = new URLSearchParams();
+    if (filter?.type) params.append('type', filter.type);
+    if (filter?.enabled !== undefined) params.append('enabled', filter.enabled.toString());
+    const url = `/admin/notification-rules${params.toString() ? `?${params.toString()}` : ''}`;
+    return this.get<Array<any>>(url);
+  }
+
+  async getNotificationRule(id: string): Promise<ApiResponse<any>> {
+    return this.get<any>(`/admin/notification-rules/${id}`);
+  }
+
+  async createNotificationRule(data: {
+    name: string;
+    description?: string;
+    type: string;
+    triggerCondition: any;
+    templateId: string;
+    targetScope?: string;
+    targetUsers?: string[];
+    isEnabled?: boolean;
+    cooldownMinutes?: number;
+  }): Promise<ApiResponse<any>> {
+    return this.post<any>('/admin/notification-rules', data);
+  }
+
+  async updateNotificationRule(id: string, data: {
+    name: string;
+    description?: string;
+    type: string;
+    triggerCondition: any;
+    templateId: string;
+    targetScope: string;
+    targetUsers?: string[];
+    isEnabled: boolean;
+    cooldownMinutes: number;
+  }): Promise<ApiResponse<any>> {
+    return this.put<any>(`/admin/notification-rules/${id}`, data);
+  }
+
+  async deleteNotificationRule(id: string): Promise<ApiResponse<void>> {
+    return this.delete<void>(`/admin/notification-rules/${id}`);
+  }
+
+  async toggleNotificationRule(id: string): Promise<ApiResponse<any>> {
+    return this.put<any>(`/admin/notification-rules/${id}/toggle`, {});
+  }
+
+  // 通知模板管理相关方法
+  async getNotificationTemplates(): Promise<ApiResponse<Array<any>>> {
+    return this.get<Array<any>>('/admin/notification-templates');
+  }
+
+  async createNotificationTemplate(data: {
+    name: string;
+    title: string;
+    message: string;
+    type?: string;
+    priority?: string;
+    actionUrl?: string;
+    variables?: any;
+  }): Promise<ApiResponse<any>> {
+    return this.post<any>('/admin/notification-templates', data);
+  }
+
+  // 通知规则日志相关方法
+  async getNotificationRuleLogs(filter?: {
+    page?: number;
+    pageSize?: number;
+    ruleId?: string;
+    success?: boolean;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<ApiResponse<any>> {
+    const params = new URLSearchParams();
+    if (filter?.page) params.append('page', filter.page.toString());
+    if (filter?.pageSize) params.append('page_size', filter.pageSize.toString());
+    if (filter?.ruleId) params.append('rule_id', filter.ruleId);
+    if (filter?.success !== undefined) params.append('success', filter.success.toString());
+    if (filter?.startDate) params.append('start_date', filter.startDate);
+    if (filter?.endDate) params.append('end_date', filter.endDate);
+    const url = `/admin/notification-rule-logs${params.toString() ? `?${params.toString()}` : ''}`;
+    return this.get<any>(url);
+  }
+
+  // 通知触发相关方法
+  async triggerNotification(triggerType: string, triggerData: any): Promise<ApiResponse<any>> {
+    return this.post<any>('/admin/notification-trigger', { triggerType, triggerData });
+  }
+
+  async testNotificationTrigger(testType: string): Promise<ApiResponse<any>> {
+    return this.get<any>(`/admin/notification-trigger?test=${testType}`);
   }
 }
 

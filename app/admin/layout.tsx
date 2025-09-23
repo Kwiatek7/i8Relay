@@ -12,7 +12,9 @@ import {
   Activity,
   CreditCard,
   LogOut,
-  Home
+  Home,
+  Bell,
+  Zap
 } from 'lucide-react';
 import BackToTop from '../components/BackToTop';
 
@@ -75,6 +77,11 @@ export default function AdminLayout({
       name: '套餐管理',
       href: '/admin/plans',
       icon: Package,
+    },
+    {
+      name: '通知管理',
+      href: '/admin/notifications',
+      icon: Bell,
     },
     {
       name: '支付配置',

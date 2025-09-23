@@ -345,120 +345,13 @@ export function useNotifications(filter: NotificationFilter = {}) {
       setLoading(true);
       setError(null);
 
-      // 模拟API调用 - 在实际项目中应该调用真实API
-      const mockNotifications: Notification[] = [
-        {
-          id: '1',
-          title: '账户余额不足',
-          message: '您的账户余额仅剩 $5.23，建议及时充值以避免服务中断。',
-          type: 'billing',
-          isRead: false,
-          createdAt: '2024-12-23T10:30:00Z',
-          updatedAt: '2024-12-23T10:30:00Z',
-          actionUrl: '/dashboard/billing',
-          priority: 'high',
-          userId: 'user1'
-        },
-        {
-          id: '2',
-          title: '系统维护通知',
-          message: '系统将于今晚 22:00-24:00 进行例行维护，期间服务可能会短暂中断。',
-          type: 'system',
-          isRead: false,
-          createdAt: '2024-12-23T09:15:00Z',
-          updatedAt: '2024-12-23T09:15:00Z',
-          priority: 'medium',
-          userId: 'user1'
-        },
-        {
-          id: '3',
-          title: '密码安全提醒',
-          message: '检测到您的密码已使用超过 90 天，建议及时更换密码确保账户安全。',
-          type: 'security',
-          isRead: true,
-          createdAt: '2024-12-22T16:45:00Z',
-          updatedAt: '2024-12-22T16:45:00Z',
-          actionUrl: '/dashboard/profile',
-          priority: 'medium',
-          userId: 'user1'
-        },
-        {
-          id: '4',
-          title: 'API 密钥即将过期',
-          message: '您的 API 密钥将在 7 天后过期，请及时更新以确保服务正常使用。',
-          type: 'warning',
-          isRead: true,
-          createdAt: '2024-12-22T14:20:00Z',
-          updatedAt: '2024-12-22T14:20:00Z',
-          actionUrl: '/dashboard/profile',
-          priority: 'high',
-          userId: 'user1'
-        },
-        {
-          id: '5',
-          title: '新功能上线',
-          message: '我们推出了全新的使用统计功能，现在您可以更详细地了解API使用情况。',
-          type: 'info',
-          isRead: true,
-          createdAt: '2024-12-21T11:00:00Z',
-          updatedAt: '2024-12-21T11:00:00Z',
-          actionUrl: '/dashboard/usage',
-          priority: 'low',
-          userId: 'user1'
-        },
-        {
-          id: '6',
-          title: '账单支付成功',
-          message: '您的月度账单 $29.99 已支付成功，感谢您的使用。',
-          type: 'success',
-          isRead: true,
-          createdAt: '2024-12-20T08:30:00Z',
-          updatedAt: '2024-12-20T08:30:00Z',
-          actionUrl: '/dashboard/billing',
-          priority: 'low',
-          userId: 'user1'
-        }
-      ];
+      const response = await apiClient.getNotifications(filter);
 
-      // 应用筛选
-      let filteredNotifications = mockNotifications;
-
-      if (filter.isRead !== undefined) {
-        filteredNotifications = filteredNotifications.filter(n => n.isRead === filter.isRead);
+      if (response.success && response.data !== undefined) {
+        setData(response.data);
+      } else {
+        throw new Error(response.error?.message || '获取通知失败');
       }
-
-      if (filter.type && filter.type !== 'all') {
-        filteredNotifications = filteredNotifications.filter(n => n.type === filter.type);
-      }
-
-      if (filter.priority && filter.priority !== 'all') {
-        filteredNotifications = filteredNotifications.filter(n => n.priority === filter.priority);
-      }
-
-      if (filter.search) {
-        const searchLower = filter.search.toLowerCase();
-        filteredNotifications = filteredNotifications.filter(n =>
-          n.title.toLowerCase().includes(searchLower) ||
-          n.message.toLowerCase().includes(searchLower)
-        );
-      }
-
-      // 分页
-      const page = filter.page || 1;
-      const pageSize = filter.pageSize || 20;
-      const startIndex = (page - 1) * pageSize;
-      const endIndex = startIndex + pageSize;
-      const paginatedData = filteredNotifications.slice(startIndex, endIndex);
-
-      const response: PaginatedResponse<Notification> = {
-        data: paginatedData,
-        total: filteredNotifications.length,
-        page,
-        pageSize,
-        totalPages: Math.ceil(filteredNotifications.length / pageSize)
-      };
-
-      setData(response);
     } catch (err) {
       const errorMessage = handleApiError(err);
       setError(errorMessage);
@@ -494,60 +387,80 @@ export function useNotificationActions() {
   // 标记为已读
   const markAsRead = useCallback(async (notificationId: string) => {
     try {
-      // 模拟API调用
-      console.log('标记通知为已读:', notificationId);
-      return { success: true };
+      const response = await apiClient.markNotificationAsRead(notificationId);
+      if (response.success) {
+        return { success: true };
+      } else {
+        throw new Error(response.error?.message || '标记已读失败');
+      }
     } catch (error) {
       console.error('标记已读失败:', error);
-      return { success: false, error: '操作失败' };
+      const errorMessage = handleApiError(error);
+      return { success: false, error: errorMessage };
     }
   }, []);
 
   // 标记为未读
   const markAsUnread = useCallback(async (notificationId: string) => {
     try {
-      // 模拟API调用
-      console.log('标记通知为未读:', notificationId);
-      return { success: true };
+      const response = await apiClient.markNotificationAsUnread(notificationId);
+      if (response.success) {
+        return { success: true };
+      } else {
+        throw new Error(response.error?.message || '标记未读失败');
+      }
     } catch (error) {
       console.error('标记未读失败:', error);
-      return { success: false, error: '操作失败' };
+      const errorMessage = handleApiError(error);
+      return { success: false, error: errorMessage };
     }
   }, []);
 
   // 删除通知
   const deleteNotification = useCallback(async (notificationId: string) => {
     try {
-      // 模拟API调用
-      console.log('删除通知:', notificationId);
-      return { success: true };
+      const response = await apiClient.deleteNotification(notificationId);
+      if (response.success) {
+        return { success: true };
+      } else {
+        throw new Error(response.error?.message || '删除通知失败');
+      }
     } catch (error) {
       console.error('删除通知失败:', error);
-      return { success: false, error: '删除失败' };
+      const errorMessage = handleApiError(error);
+      return { success: false, error: errorMessage };
     }
   }, []);
 
   // 批量标记为已读
   const markAllAsRead = useCallback(async () => {
     try {
-      // 模拟API调用
-      console.log('批量标记为已读');
-      return { success: true };
+      const response = await apiClient.markAllNotificationsAsRead();
+      if (response.success) {
+        return { success: true };
+      } else {
+        throw new Error(response.error?.message || '批量标记失败');
+      }
     } catch (error) {
       console.error('批量标记失败:', error);
-      return { success: false, error: '操作失败' };
+      const errorMessage = handleApiError(error);
+      return { success: false, error: errorMessage };
     }
   }, []);
 
   // 清空所有通知
   const clearAllNotifications = useCallback(async () => {
     try {
-      // 模拟API调用
-      console.log('清空所有通知');
-      return { success: true };
+      const response = await apiClient.clearAllNotifications();
+      if (response.success) {
+        return { success: true };
+      } else {
+        throw new Error(response.error?.message || '清空通知失败');
+      }
     } catch (error) {
       console.error('清空通知失败:', error);
-      return { success: false, error: '清空失败' };
+      const errorMessage = handleApiError(error);
+      return { success: false, error: errorMessage };
     }
   }, []);
 
@@ -568,9 +481,13 @@ export function useUnreadCount() {
   const fetchUnreadCount = useCallback(async () => {
     try {
       setLoading(true);
-      // 模拟API调用 - 在实际项目中应该调用真实API
-      // 这里应该返回未读通知的数量
-      setCount(3); // 模拟3个未读通知
+      const response = await apiClient.getUnreadNotificationCount();
+
+      if (response.success && response.data) {
+        setCount(response.data.count);
+      } else {
+        throw new Error(response.error?.message || '获取未读数量失败');
+      }
     } catch (error) {
       console.error('获取未读数量失败:', error);
       setCount(0);
