@@ -12,8 +12,7 @@ interface FormData {
 }
 
 interface CaptchaData {
-  question: string;
-  token: string;
+  imageUrl: string;
 }
 
 interface FormErrors {
@@ -45,8 +44,9 @@ export function ContactForm() {
     try {
       const response = await fetch('/api/captcha');
       if (response.ok) {
-        const data = await response.json();
-        setCaptcha(data);
+        const blob = await response.blob();
+        const imageUrl = URL.createObjectURL(blob);
+        setCaptcha({ imageUrl });
         // 清空验证码输入
         setFormData(prev => ({ ...prev, captchaCode: '' }));
       } else {
@@ -105,8 +105,8 @@ export function ContactForm() {
     setIsSubmitting(true);
 
     try {
-      // 检查验证码token
-      if (!captcha?.token) {
+      // 检查验证码是否存在
+      if (!captcha?.imageUrl) {
         alert('请先获取验证码');
         return;
       }
@@ -117,10 +117,7 @@ export function ContactForm() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...formData,
-          captchaToken: captcha.token
-        }),
+        body: JSON.stringify(formData),
       });
 
       const data = await response.json();
@@ -343,26 +340,34 @@ export function ContactForm() {
                     className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-200 ${
                       errors.captchaCode ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : 'border-gray-300 hover:border-gray-400'
                     }`}
-                    placeholder="请输入计算结果"
-                    maxLength={3}
+                    placeholder="请输入验证码"
+                    maxLength={4}
                   />
                 </div>
                 <div className="flex items-center space-x-3">
-                  <div className="flex items-center space-x-2 text-lg">
-                    <span className="text-gray-700 dark:text-gray-300">计算结果：</span>
+                  <div className="flex items-center space-x-3">
+                    <span className="text-gray-700 dark:text-gray-300">验证码：</span>
                     {loadingCaptcha ? (
-                      <div className="flex items-center">
+                      <div className="flex items-center justify-center w-32 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg border">
                         <svg className="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
                       </div>
-                    ) : captcha?.question ? (
-                      <span className="font-mono text-xl font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-1 rounded-lg border border-blue-200 dark:border-blue-800">
-                        {captcha.question} = ?
-                      </span>
+                    ) : captcha?.imageUrl ? (
+                      <div className="w-32 h-10 bg-white rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
+                        <img
+                          src={captcha.imageUrl}
+                          alt="验证码"
+                          className="w-full h-full object-cover"
+                          onClick={fetchCaptcha}
+                          style={{ cursor: 'pointer' }}
+                        />
+                      </div>
                     ) : (
-                      <span className="text-gray-400 text-sm">加载中...</span>
+                      <div className="w-32 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg border flex items-center justify-center">
+                        <span className="text-gray-400 text-sm">加载中...</span>
+                      </div>
                     )}
                   </div>
                   <button
@@ -387,7 +392,7 @@ export function ContactForm() {
                 <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                请计算上面的数学题并输入结果，点击刷新可更换题目
+                请输入验证码图片中的字符，点击图片或刷新按钮可更换验证码
               </p>
             </div>
           </div>

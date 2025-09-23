@@ -56,6 +56,9 @@ export async function GET(request: NextRequest) {
         smtp_password: siteConfig.smtp_password || '',
         smtp_secure: siteConfig.smtp_secure !== null ? !!siteConfig.smtp_secure : false,
         contact_form_email: siteConfig.contact_form_email || '',
+
+        // 首页配置
+        homepage_video_url: siteConfig.homepage_video_url || 'https://www.youtube.com/embed/dQw4w9WgXcQ',
       };
 
       return createAuthResponse(config, '配置获取成功');
@@ -92,7 +95,7 @@ export async function PUT(request: NextRequest) {
     const allowedKeys = [
       'site_name', 'site_name_split_index', 'site_title', 'site_description', 'site_keywords', 'site_logo',
       'primary_color', 'secondary_color', 'contact_email', 'company_address',
-      'footer_text', 'enable_registration',
+      'footer_text', 'enable_registration', 'homepage_video_url',
       // SMTP邮件配置
       'smtp_enabled', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_password', 'smtp_secure', 'contact_form_email'
     ];
@@ -122,6 +125,7 @@ export async function PUT(request: NextRequest) {
           theme_secondary_color = ?,
           enable_registration = ?,
           footer_text = ?,
+          homepage_video_url = ?,
           smtp_enabled = ?,
           smtp_host = ?,
           smtp_port = ?,
@@ -145,6 +149,7 @@ export async function PUT(request: NextRequest) {
         configData.secondary_color || '#8b5cf6',
         configData.enable_registration ? 1 : 0,
         configData.footer_text || '',
+        configData.homepage_video_url || 'https://www.youtube.com/embed/dQw4w9WgXcQ',
         configData.smtp_enabled ? 1 : 0,
         configData.smtp_host || '',
         configData.smtp_port || 587,
@@ -161,9 +166,9 @@ export async function PUT(request: NextRequest) {
         INSERT INTO site_config (
           id, site_name, site_name_split_index, site_description, seo_title, seo_description, seo_keywords,
           site_logo, contact_email, contact_address, theme_primary_color, theme_secondary_color,
-          enable_registration, footer_text, smtp_enabled, smtp_host, smtp_port, smtp_user, smtp_password,
+          enable_registration, footer_text, homepage_video_url, smtp_enabled, smtp_host, smtp_port, smtp_user, smtp_password,
           smtp_secure, contact_form_email, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         'default',
         configData.site_name || '',
@@ -179,6 +184,7 @@ export async function PUT(request: NextRequest) {
         configData.secondary_color || '#8b5cf6',
         configData.enable_registration ? 1 : 0,
         configData.footer_text || '',
+        configData.homepage_video_url || 'https://www.youtube.com/embed/dQw4w9WgXcQ',
         configData.smtp_enabled ? 1 : 0,
         configData.smtp_host || '',
         configData.smtp_port || 587,

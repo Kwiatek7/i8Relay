@@ -9,7 +9,6 @@ interface ContactFormData {
   email: string;
   description: string;
   captchaCode: string;
-  captchaToken: string;
 }
 
 interface SmtpConfig {
@@ -52,9 +51,9 @@ export async function POST(request: NextRequest) {
     const body: ContactFormData = await request.json();
 
     // 验证必填字段
-    const { name, position, email, description, captchaCode, captchaToken } = body;
+    const { name, position, email, description, captchaCode } = body;
 
-    if (!name || !position || !email || !description || !captchaCode || !captchaToken) {
+    if (!name || !position || !email || !description || !captchaCode) {
       return NextResponse.json(
         { error: '请填写所有必填字段' },
         { status: 400 }
@@ -80,12 +79,33 @@ export async function POST(request: NextRequest) {
 
     // 验证验证码
     try {
+      // 从Cookie中获取验证码token
+      const cookieHeader = request.headers.get('cookie');
+      if (!cookieHeader) {
+        return NextResponse.json(
+          { error: '验证码已过期，请重新获取' },
+          { status: 400 }
+        );
+      }
+
+      const tokenMatch = cookieHeader.match(/captcha-token=([^;]+)/);
+      if (!tokenMatch) {
+        return NextResponse.json(
+          { error: '验证码已过期，请重新获取' },
+          { status: 400 }
+        );
+      }
+
+      const token = tokenMatch[1];
+
+      // 验证JWT token
       const decoded = jwt.verify(
-        captchaToken,
+        token,
         process.env.JWT_SECRET || 'default-secret'
       ) as { answer: string; timestamp: number };
 
-      if (decoded.answer !== captchaCode.toLowerCase().trim()) {
+      // 检查验证码是否正确（不区分大小写）
+      if (decoded.answer.toUpperCase() !== captchaCode.toUpperCase().trim()) {
         return NextResponse.json(
           { error: '验证码错误，请重新输入' },
           { status: 400 }

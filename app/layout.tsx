@@ -9,6 +9,8 @@ import { getSiteConfig } from "../lib/config-utils";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+  display: 'swap',
+  fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif']
 });
 
 export async function generateMetadata(): Promise<Metadata> {

@@ -51,7 +51,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await authService.login(credentials);
 
       if (response.success && response.data) {
-        setUser(response.data.user);
+        console.log('登录响应数据：', response.data);
+
+        // 确保用户数据完整设置
+        const userData = response.data.user;
+        console.log('设置用户数据：', userData);
+
+        setUser(userData);
+
+        // 验证用户状态是否正确设置
+        console.log('用户角色：', userData.role);
+        console.log('是否为管理员：', userData.role === 'admin' || userData.role === 'super_admin');
+
         return { success: true };
       } else {
         const errorMessage = response.error?.message || '登录失败';

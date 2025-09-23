@@ -36,17 +36,27 @@ function LoginForm() {
 
   // 监听用户状态变化，登录成功后根据角色重定向
   useEffect(() => {
-    if (loginSuccess && isAuthenticated && user) {
-      if (user.role === 'admin' || user.role === 'super_admin') {
-        console.log('管理员登录，跳转到 /admin');
-        router.push('/admin');
-      } else {
-        console.log('普通用户登录，跳转到 /dashboard');
-        router.push('/dashboard');
-      }
-      setLoginSuccess(false); // 重置状态
+    if (isAuthenticated && user && loginSuccess) {
+      console.log('用户登录状态：', {
+        isAuthenticated,
+        userRole: user.role,
+        userId: user.id,
+        username: user.username
+      });
+
+      // 给一个短暂延迟确保状态完全更新
+      setTimeout(() => {
+        if (user.role === 'admin' || user.role === 'super_admin') {
+          console.log('管理员登录，跳转到 /admin');
+          router.push('/admin');
+        } else {
+          console.log('普通用户登录，跳转到 /dashboard');
+          router.push('/dashboard');
+        }
+        setLoginSuccess(false); // 重置状态
+      }, 100);
     }
-  }, [loginSuccess, isAuthenticated, user, router]);
+  }, [isAuthenticated, user, loginSuccess, router]);
 
   if (!config) {
     return (
