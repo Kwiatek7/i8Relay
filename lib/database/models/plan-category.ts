@@ -125,7 +125,7 @@ export class PlanCategoryModel extends BaseModel {
       UPDATE ${this.tableName} SET ${setClause} WHERE id = ?
     `, [...params, id]);
 
-    if (result.changes === 0) {
+    if ((result.changes ?? 0) === 0) {
       return null;
     }
 
@@ -159,7 +159,7 @@ export class PlanCategoryModel extends BaseModel {
       WHERE id = ?
     `, [this.getCurrentTimestamp(), id]);
 
-    if (result.changes === 0) {
+    if ((result.changes ?? 0) === 0) {
       return null;
     }
 
@@ -174,7 +174,7 @@ export class PlanCategoryModel extends BaseModel {
       WHERE id = ?
     `, [is_featured, this.getCurrentTimestamp(), id]);
 
-    if (result.changes === 0) {
+    if ((result.changes ?? 0) === 0) {
       return null;
     }
 

@@ -42,7 +42,7 @@ async function deleteApiKey(userId: string, keyId: string): Promise<boolean> {
       [keyId, userId]
     );
 
-    return result.changes > 0;
+    return (result.changes ?? 0) > 0;
 
   } catch (error) {
     console.error('Database delete error:', error);

@@ -157,7 +157,7 @@ export class UserModel extends BaseModel {
       UPDATE ${this.tableName} SET ${setClause} WHERE id = ?
     `, [...params, id]);
 
-    if (result.changes === 0) {
+    if ((result.changes ?? 0) === 0) {
       return null;
     }
 
@@ -190,7 +190,7 @@ export class UserModel extends BaseModel {
       WHERE id = ?
     `, [newPasswordHash, salt, this.getCurrentTimestamp(), id]);
 
-    return result.changes > 0;
+    return (result.changes ?? 0) > 0;
   }
 
   // 更新登录时间
@@ -283,7 +283,7 @@ export class UserModel extends BaseModel {
         WHERE id = ?
       `, [this.getCurrentTimestamp(), id]);
 
-      return result.changes > 0;
+      return (result.changes ?? 0) > 0;
     }
 
     // 没有关联记录时，可以物理删除

@@ -36,11 +36,15 @@ export abstract class BaseModel {
   // 执行INSERT/UPDATE/DELETE
   protected async execute(sql: string, params: any[] = []): Promise<{
     changes: number;
-    lastInsertRowid?: number | bigint;
+    lastID?: number;
   }> {
     try {
       const db = await getDb();
-      return await db.run(sql, params);
+      const result = await db.run(sql, params);
+      return {
+        changes: result.changes ?? 0,
+        lastID: result.lastID
+      };
     } catch (error) {
       console.error('数据库执行错误:', error);
       throw error;

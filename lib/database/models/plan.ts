@@ -219,7 +219,7 @@ export class PlanModel extends BaseModel {
       UPDATE ${this.tableName} SET ${setClause} WHERE id = ?
     `, [...params, id]);
 
-    if (result.changes === 0) {
+    if ((result.changes ?? 0) === 0) {
       return null;
     }
 
@@ -250,7 +250,7 @@ export class PlanModel extends BaseModel {
         WHERE id = ?
       `, [this.getCurrentTimestamp(), id]);
 
-      return result.changes > 0;
+      return (result.changes ?? 0) > 0;
     }
 
     // 没有关联记录时，可以物理删除
@@ -270,7 +270,7 @@ export class PlanModel extends BaseModel {
       WHERE id = ?
     `, [this.getCurrentTimestamp(), id]);
 
-    if (result.changes === 0) {
+    if ((result.changes ?? 0) === 0) {
       return null;
     }
 
@@ -293,7 +293,7 @@ export class PlanModel extends BaseModel {
         WHERE id = ?
       `, [this.getCurrentTimestamp(), id]);
 
-      if (result.changes === 0) {
+      if ((result.changes ?? 0) === 0) {
         return null;
       }
 

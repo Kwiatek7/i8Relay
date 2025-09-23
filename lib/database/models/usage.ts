@@ -405,7 +405,7 @@ export class UsageModel extends BaseModel {
     ]);
 
     // 如果没有更新到记录，则插入新记录
-    if (updateResult.changes === 0) {
+    if ((updateResult.changes ?? 0) === 0) {
       await this.execute(`
         INSERT INTO daily_usage_summaries (
           id, user_id, date,
@@ -445,7 +445,7 @@ export class UsageModel extends BaseModel {
     `, [usage.total_tokens, usage.cost, this.getCurrentTimestamp(), userId, model, today]);
 
     // 如果没有更新到记录，则插入新记录
-    if (updateResult.changes === 0) {
+    if ((updateResult.changes ?? 0) === 0) {
       await this.execute(`
         INSERT INTO model_usage_stats (
           id, user_id, model, date, requests, tokens, cost
@@ -464,7 +464,7 @@ export class UsageModel extends BaseModel {
       WHERE created_at < ?
     `, [cutoffDate.toISOString()]);
 
-    return result.changes;
+    return result.changes ?? 0;
   }
 }
 

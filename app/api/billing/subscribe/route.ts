@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
         WHERE id = ?
       `, [plan.name, newBalance, new Date().toISOString(), auth.user.id]);
 
-      if (!updatedUserResult.changes) {
+      if ((updatedUserResult.changes ?? 0) === 0) {
         throw new Error('用户信息更新失败');
       }
 

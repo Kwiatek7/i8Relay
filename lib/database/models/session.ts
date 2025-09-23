@@ -137,7 +137,7 @@ export class SessionModel extends BaseModel {
         sessionId
       ]);
 
-      return result.changes > 0;
+      return (result.changes ?? 0) > 0;
     } catch {
       return false;
     }
@@ -164,7 +164,7 @@ export class SessionModel extends BaseModel {
       WHERE user_id = ?
     `, [userId]);
 
-    return result.changes;
+    return result.changes ?? 0;
   }
 
   // 删除用户的其他会话（保留当前会话）
@@ -174,7 +174,7 @@ export class SessionModel extends BaseModel {
       WHERE user_id = ? AND id != ?
     `, [userId, currentSessionId]);
 
-    return result.changes;
+    return result.changes ?? 0;
   }
 
   // 获取用户的活跃会话列表
@@ -213,7 +213,7 @@ export class SessionModel extends BaseModel {
       WHERE expires_at <= datetime('now')
     `);
 
-    return result.changes;
+    return result.changes ?? 0;
   }
 
   // 获取会话统计信息
@@ -276,7 +276,7 @@ export class SessionModel extends BaseModel {
       WHERE id = ?
     `, [newExpiresAt.toISOString(), this.getCurrentTimestamp(), sessionId]);
 
-    return result.changes > 0;
+    return (result.changes ?? 0) > 0;
   }
 }
 

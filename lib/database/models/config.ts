@@ -110,7 +110,7 @@ export class ConfigModel extends BaseModel {
     `, [stringValue, dataType, description, isPublic, this.getCurrentTimestamp(), category, key]);
 
     // 如果没有更新到记录，则插入新记录
-    if (updateResult.changes === 0) {
+    if ((updateResult.changes ?? 0) === 0) {
       await this.execute(`
         INSERT INTO ${this.tableName} (
           id, category, key, value, data_type, description, is_public
@@ -152,7 +152,7 @@ export class ConfigModel extends BaseModel {
       WHERE category = ? AND key = ?
     `, [category, key]);
 
-    return result.changes > 0;
+    return (result.changes ?? 0) > 0;
   }
 
   // 删除分类下的所有配置
@@ -162,7 +162,7 @@ export class ConfigModel extends BaseModel {
       WHERE category = ?
     `, [category]);
 
-    return result.changes;
+    return result.changes ?? 0;
   }
 
   // 获取网站配置
@@ -230,7 +230,7 @@ export class ConfigModel extends BaseModel {
     `, params);
 
     // 如果没有更新到记录，则插入新记录
-    if (updateResult.changes === 0) {
+    if ((updateResult.changes ?? 0) === 0) {
       const defaultConfig = {
         id: 'default',
         site_name: 'i8Relay',
