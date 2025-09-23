@@ -39,9 +39,10 @@ export class SQLiteAdapter implements DatabaseAdapter {
     // 将回调方法转换为 Promise
     this.db.get = promisify(this.db.get.bind(this.db));
     this.db.all = promisify(this.db.all.bind(this.db));
-    this.db.run = promisify(this.db.run.bind(this.db));
     this.db.exec = promisify(this.db.exec.bind(this.db));
     this.db.close = promisify(this.db.close.bind(this.db));
+
+    // 特殊处理 run 方法以正确获取 lastID 和 changes
 
     this.connected = true;
 
@@ -67,11 +68,19 @@ export class SQLiteAdapter implements DatabaseAdapter {
 
   async run(sql: string, params?: any): Promise<{ lastID?: number; changes?: number }> {
     if (!this.connected) await this.connect();
-    const result = await this.db.run(sql, params);
-    return {
-      lastID: result.lastID,
-      changes: result.changes
-    };
+
+    return new Promise((resolve, reject) => {
+      this.db.run(sql, params, function(this: any, err: Error | null) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve({
+            lastID: this.lastID,
+            changes: this.changes
+          });
+        }
+      });
+    });
   }
 
   async exec(sql: string): Promise<void> {
