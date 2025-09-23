@@ -10,6 +10,7 @@ import {
   Package,
   Settings,
   Activity,
+  CreditCard,
   LogOut,
   Home
 } from 'lucide-react';
@@ -74,6 +75,11 @@ export default function AdminLayout({
       name: '套餐管理',
       href: '/admin/plans',
       icon: Package,
+    },
+    {
+      name: '支付配置',
+      href: '/admin/payments',
+      icon: CreditCard,
     },
     {
       name: '网站配置',

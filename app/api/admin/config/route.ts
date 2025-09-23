@@ -59,15 +59,6 @@ export async function GET(request: NextRequest) {
 
         // 首页配置
         homepage_video_url: siteConfig.homepage_video_url || 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-
-        // Stripe支付配置
-        stripe_enabled: siteConfig.stripe_enabled !== null ? !!siteConfig.stripe_enabled : false,
-        stripe_publishable_key: siteConfig.stripe_publishable_key || '',
-        stripe_secret_key: siteConfig.stripe_secret_key || '',
-        stripe_webhook_secret: siteConfig.stripe_webhook_secret || '',
-        stripe_test_mode: siteConfig.stripe_test_mode !== null ? !!siteConfig.stripe_test_mode : true,
-        stripe_currency: siteConfig.stripe_currency || 'usd',
-        stripe_country: siteConfig.stripe_country || 'US',
       };
 
       return createAuthResponse(config, '配置获取成功');
@@ -100,16 +91,13 @@ export async function PUT(request: NextRequest) {
     const db = await getDb();
     const configData = await request.json();
 
-    // 验证配置数据 - 只检查数据库中实际存在的字段
+    // 验证配置数据 - 只检查网站基本配置字段
     const allowedKeys = [
       'site_name', 'site_name_split_index', 'site_title', 'site_description', 'site_keywords', 'site_logo',
       'primary_color', 'secondary_color', 'contact_email', 'company_address',
       'footer_text', 'enable_registration', 'homepage_video_url',
       // SMTP邮件配置
-      'smtp_enabled', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_password', 'smtp_secure', 'contact_form_email',
-      // Stripe支付配置
-      'stripe_enabled', 'stripe_publishable_key', 'stripe_secret_key', 'stripe_webhook_secret',
-      'stripe_test_mode', 'stripe_currency', 'stripe_country'
+      'smtp_enabled', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_password', 'smtp_secure', 'contact_form_email'
     ];
     for (const key of Object.keys(configData)) {
       if (!allowedKeys.includes(key)) {
@@ -145,13 +133,6 @@ export async function PUT(request: NextRequest) {
           smtp_password = ?,
           smtp_secure = ?,
           contact_form_email = ?,
-          stripe_enabled = ?,
-          stripe_publishable_key = ?,
-          stripe_secret_key = ?,
-          stripe_webhook_secret = ?,
-          stripe_test_mode = ?,
-          stripe_currency = ?,
-          stripe_country = ?,
           updated_at = ?
         WHERE id = ?
       `, [
@@ -176,13 +157,6 @@ export async function PUT(request: NextRequest) {
         configData.smtp_password || '',
         configData.smtp_secure ? 1 : 0,
         configData.contact_form_email || '',
-        configData.stripe_enabled ? 1 : 0,
-        configData.stripe_publishable_key || '',
-        configData.stripe_secret_key || '',
-        configData.stripe_webhook_secret || '',
-        configData.stripe_test_mode ? 1 : 0,
-        configData.stripe_currency || 'usd',
-        configData.stripe_country || 'US',
         new Date().toISOString(),
         'default'
       ]);
@@ -193,9 +167,8 @@ export async function PUT(request: NextRequest) {
           id, site_name, site_name_split_index, site_description, seo_title, seo_description, seo_keywords,
           site_logo, contact_email, contact_address, theme_primary_color, theme_secondary_color,
           enable_registration, footer_text, homepage_video_url, smtp_enabled, smtp_host, smtp_port, smtp_user, smtp_password,
-          smtp_secure, contact_form_email, stripe_enabled, stripe_publishable_key, stripe_secret_key, stripe_webhook_secret,
-          stripe_test_mode, stripe_currency, stripe_country, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          smtp_secure, contact_form_email, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         'default',
         configData.site_name || '',
@@ -219,13 +192,6 @@ export async function PUT(request: NextRequest) {
         configData.smtp_password || '',
         configData.smtp_secure ? 1 : 0,
         configData.contact_form_email || '',
-        configData.stripe_enabled ? 1 : 0,
-        configData.stripe_publishable_key || '',
-        configData.stripe_secret_key || '',
-        configData.stripe_webhook_secret || '',
-        configData.stripe_test_mode ? 1 : 0,
-        configData.stripe_currency || 'usd',
-        configData.stripe_country || 'US',
         new Date().toISOString(),
         new Date().toISOString()
       ]);
