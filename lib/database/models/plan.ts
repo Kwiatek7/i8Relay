@@ -202,6 +202,12 @@ export class PlanModel extends BaseModel {
 
   // 更新套餐
   async update(id: string, updateData: UpdatePlanData): Promise<Plan | null> {
+    // 先检查套餐是否存在
+    const existingPlan = await this.findPlanById(id);
+    if (!existingPlan) {
+      throw new Error('套餐不存在');
+    }
+
     const cleanData = this.cleanData({
       ...updateData,
       // 如果有数组字段，需要JSON化
@@ -210,17 +216,23 @@ export class PlanModel extends BaseModel {
       updated_at: this.getCurrentTimestamp()
     });
 
-    if (Object.keys(cleanData).length === 0) {
-      throw new Error('没有要更新的数据');
+    if (Object.keys(cleanData).length <= 1) { // 只有 updated_at
+      console.log('没有实际要更新的数据，返回现有套餐');
+      return existingPlan;
     }
 
     const { setClause, params } = this.buildSetClause(cleanData);
+    console.log('准备执行更新:', { setClause, params, id });
+    
     const result = await this.execute(`
       UPDATE ${this.tableName} SET ${setClause} WHERE id = ?
     `, [...params, id]);
 
+    console.log('更新执行结果:', result);
+
     if ((result.changes ?? 0) === 0) {
-      return null;
+      console.warn('更新语句执行成功但没有影响任何行');
+      return existingPlan; // 返回现有数据而不是 null
     }
 
     return await this.findPlanById(id);

@@ -83,11 +83,23 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     // 更新套餐
-    updateData.updated_at = new Date().toISOString();
-    const updatedPlan = await planModel.update(planId, updateData);
+    try {
+      updateData.updated_at = new Date().toISOString();
+      const updatedPlan = await planModel.update(planId, updateData);
 
-    if (!updatedPlan) {
-      return createErrorResponse(new Error('更新套餐失败'), 500);
+      if (!updatedPlan) {
+        // 再次验证套餐是否存在
+        const stillExists = await planModel.findPlanById(planId);
+        if (!stillExists) {
+          return createErrorResponse(new Error('套餐不存在，可能已被删除'), 404);
+        }
+        return createErrorResponse(new Error('更新套餐失败：没有任何字段被修改'), 400);
+      }
+
+      return createAuthResponse(updatedPlan, '套餐更新成功');
+    } catch (updateError: any) {
+      console.error('套餐更新详细错误:', updateError);
+      return createErrorResponse(new Error(`更新套餐失败: ${updateError.message}`), 500);
     }
 
     return createAuthResponse(updatedPlan, '套餐更新成功');
