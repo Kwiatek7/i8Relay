@@ -5,6 +5,7 @@ import { AuthProvider } from "../lib/auth-context";
 import { ConfigProvider } from "../lib/providers/config-provider";
 import { getSiteConfig } from "../lib/config-utils";
 import BackToTop from "./components/BackToTop";
+import { ToastProvider } from "../components/ui/toast";
 
 export async function generateMetadata(): Promise<Metadata> {
   const config = await getSiteConfig();
@@ -56,7 +57,9 @@ export default function RootLayout({
         <ThemeProvider>
           <ConfigProvider>
             <AuthProvider>
-              {children}
+              <ToastProvider>
+                {children}
+              </ToastProvider>
             </AuthProvider>
           </ConfigProvider>
         </ThemeProvider>

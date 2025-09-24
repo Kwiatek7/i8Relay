@@ -1,7 +1,9 @@
 "use client";
 
-import React from 'react';
-import { useUsageStats, useUserSubscription } from '../../lib/hooks/use-api';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useUsageStats, useUserSubscription, useTemporaryQuota } from '../../lib/hooks/use-api';
+import { useToast } from '@/components/ui/toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +22,9 @@ import {
 } from 'lucide-react';
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const { toast } = useToast();
+
   // 获取使用统计数据
   const {
     data: usageStats,
@@ -35,6 +40,48 @@ export default function DashboardPage() {
     error: subscriptionError,
     refresh: refreshSubscription
   } = useUserSubscription();
+
+  // 临时提额相关
+  const {
+    loading: tempQuotaLoading,
+    error: tempQuotaError,
+    requestTemporaryQuota,
+    clearError: clearTempQuotaError
+  } = useTemporaryQuota();
+
+  // 处理临时提额
+  const handleTemporaryQuotaIncrease = async () => {
+    try {
+      clearTempQuotaError();
+      const result = await requestTemporaryQuota();
+      
+      if (result.success && result.data) {
+        toast({
+          type: 'success',
+          title: '临时提额成功！',
+          description: `已成功增加临时额度 $${result.data.amount}，当天有效`,
+          duration: 5000
+        });
+        
+        // 刷新订阅数据以更新UI
+        await refreshSubscription();
+      } else {
+        toast({
+          type: 'error',
+          title: '临时提额失败',
+          description: result.error || '操作失败，请稍后重试',
+          duration: 5000
+        });
+      }
+    } catch (error) {
+      toast({
+        type: 'error',
+        title: '临时提额失败',
+        description: error instanceof Error ? error.message : '操作失败，请稍后重试',
+        duration: 5000
+      });
+    }
+  };
 
   // 处理加载状态
   const loading = statsLoading || subscriptionLoading;
@@ -278,10 +325,10 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="flex space-x-2">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={() => router.push('/docs')}>
                 阅读教程
               </Button>
-              <Button size="sm">
+              <Button size="sm" onClick={() => router.push('/dashboard/plans')}>
                 立即续费
               </Button>
             </div>
@@ -307,8 +354,13 @@ export default function DashboardPage() {
                 <span className="text-sm text-[#565766] dark:text-gray-400">
                   每次临时增加 <span className="text-blue-600">$50.00</span>，当天有效
                 </span>
-                <Button size="sm">
-                  点我临时提额
+                <Button 
+                  size="sm"
+                  onClick={handleTemporaryQuotaIncrease}
+                  disabled={tempQuotaLoading}
+                  className="inline-flex items-center justify-center whitespace-nowrap rounded-full text-sm font-semibold transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 transform hover:scale-105 active:scale-95 bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg hover:shadow-xl hover:from-blue-700 hover:to-blue-800 h-9 rounded-full px-4 text-xs"
+                >
+                  {tempQuotaLoading ? '提额中...' : '点我临时提额'}
                 </Button>
               </div>
             </div>

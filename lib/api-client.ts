@@ -510,6 +510,43 @@ class ApiClient {
   async testNotificationTrigger(testType: string): Promise<ApiResponse<any>> {
     return this.get<any>(`/admin/notification-trigger?test=${testType}`);
   }
+
+  // 临时提额相关方法
+  async requestTemporaryQuota(): Promise<ApiResponse<{
+    success: boolean;
+    quota_id: string;
+    amount: number;
+    currency: string;
+    expires_at: string;
+    total_temporary_quota: number;
+    message: string;
+  }>> {
+    return this.post<{
+      success: boolean;
+      quota_id: string;
+      amount: number;
+      currency: string;
+      expires_at: string;
+      total_temporary_quota: number;
+      message: string;
+    }>('/user/temporary-quota');
+  }
+
+  async getTemporaryQuotaInfo(): Promise<ApiResponse<{
+    today_temp_quota: number;
+    temp_quota_records: any[];
+    can_use_today: boolean;
+    daily_limit_per_increase: number;
+    max_increases_per_day: number;
+  }>> {
+    return this.get<{
+      today_temp_quota: number;
+      temp_quota_records: any[];
+      can_use_today: boolean;
+      daily_limit_per_increase: number;
+      max_increases_per_day: number;
+    }>('/user/temporary-quota');
+  }
 }
 
 // 创建默认实例

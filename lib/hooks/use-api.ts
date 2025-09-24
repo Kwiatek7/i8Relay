@@ -506,3 +506,44 @@ export function useUnreadCount() {
     refresh: fetchUnreadCount
   };
 }
+
+// 临时提额相关hooks
+export function useTemporaryQuota() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const requestTemporaryQuota = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await apiClient.requestTemporaryQuota();
+      
+      if (response.success && response.data) {
+        return { success: true, data: response.data };
+      } else {
+        throw new Error(response.error?.message || '临时提额失败');
+      }
+    } catch (err) {
+      const errorMessage = handleApiError(err);
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return {
+    loading,
+    error,
+    requestTemporaryQuota,
+    clearError: () => setError(null)
+  };
+}
+
+// 获取临时提额信息
+export function useTemporaryQuotaInfo() {
+  return useApi(
+    () => apiClient.getTemporaryQuotaInfo(),
+    []
+  );
+}
