@@ -61,7 +61,7 @@ export class UserModel extends BaseModel {
       phone: userData.phone || null,
       company: userData.company || null,
       api_key: apiKey,
-      current_plan_id: 'free', // 默认免费套餐
+      current_plan_id: 'claude-code-free', // 默认免费套餐
       balance: 0.0000,
       total_requests: 0,
       total_tokens: 0,
@@ -80,7 +80,7 @@ export class UserModel extends BaseModel {
   // 根据ID查询用户
   async findUserById(id: string): Promise<User | null> {
     const user = await this.findOne<any>(`
-      SELECT u.*, p.name as plan_name
+      SELECT u.*, p.display_name as plan_name
       FROM users u
       LEFT JOIN plans p ON u.current_plan_id = p.id
       WHERE u.id = ?
@@ -92,7 +92,7 @@ export class UserModel extends BaseModel {
   // 根据邮箱查询用户
   async findByEmail(email: string): Promise<User | null> {
     const user = await this.findOne<any>(`
-      SELECT u.*, p.name as plan_name
+      SELECT u.*, p.display_name as plan_name
       FROM users u
       LEFT JOIN plans p ON u.current_plan_id = p.id
       WHERE u.email = ?
@@ -104,7 +104,7 @@ export class UserModel extends BaseModel {
   // 根据API密钥查询用户
   async findByApiKey(apiKey: string): Promise<User | null> {
     const user = await this.findOne<any>(`
-      SELECT u.*, p.name as plan_name
+      SELECT u.*, p.display_name as plan_name
       FROM users u
       LEFT JOIN plans p ON u.current_plan_id = p.id
       WHERE u.api_key = ?
@@ -116,7 +116,7 @@ export class UserModel extends BaseModel {
   // 验证用户密码
   async verifyPassword(email: string, password: string): Promise<User | null> {
     const user = await this.findOne<any>(`
-      SELECT u.*, p.name as plan_name
+      SELECT u.*, p.display_name as plan_name
       FROM users u
       LEFT JOIN plans p ON u.current_plan_id = p.id
       WHERE u.email = ? AND u.status = 'active'
@@ -243,7 +243,7 @@ export class UserModel extends BaseModel {
     const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
     const baseQuery = `
-      SELECT u.*, p.name as plan_name
+      SELECT u.*, p.display_name as plan_name
       FROM users u
       LEFT JOIN plans p ON u.current_plan_id = p.id
       ${whereClause}
@@ -327,7 +327,7 @@ export class UserModel extends BaseModel {
       id: user.id,
       username: user.username,
       email: user.email,
-      plan: user.plan_name || user.current_plan_id || 'free',
+      plan: user.plan_name || user.current_plan_id || 'claude-code-free',
       balance: parseFloat(user.balance) || 0,
       apiKey: user.api_key,
       avatar: user.avatar,

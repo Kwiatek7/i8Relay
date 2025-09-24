@@ -74,6 +74,7 @@ export interface ApiResponse<T = any> {
 export interface Plan {
   id: string;
   name: string;
+  display_name?: string;
   description: string;
   price: number;
   currency: string;

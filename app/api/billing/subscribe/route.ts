@@ -46,7 +46,13 @@ export async function POST(request: NextRequest) {
       return createErrorResponse(new Error('您已经订阅了此套餐'), 400);
     }
 
-    // 验证支付方式和余额
+    // 验证支付方式
+    const supportedPaymentMethods = ['balance', 'stripe', 'alipay'];
+    if (!supportedPaymentMethods.includes(payment_method)) {
+      return createErrorResponse(new Error('不支持的支付方式'), 400);
+    }
+
+    // 处理不同支付方式
     if (payment_method === 'balance') {
       if (user.balance < plan.price) {
         // 异步触发余额不足通知
@@ -61,23 +67,37 @@ export async function POST(request: NextRequest) {
         });
         return createErrorResponse(new Error('账户余额不足'), 400);
       }
-    } else {
-      return createErrorResponse(new Error('暂不支持此支付方式'), 400);
+    } else if (payment_method === 'stripe') {
+      // TODO: 集成Stripe支付
+      // 暂时模拟成功，实际应该创建Stripe支付意图
+      console.log('处理Stripe支付:', { plan_id, amount: plan.price });
+    } else if (payment_method === 'alipay') {
+      // TODO: 集成支付宝支付
+      // 暂时模拟成功，实际应该创建支付宝订单
+      console.log('处理支付宝支付:', { plan_id, amount: plan.price });
     }
 
     const db = await getDb();
 
     // 手动处理事务逻辑（sqlite3不支持同步事务）
     try {
-      // 扣除用户余额并更新用户套餐
-      const newBalance = user.balance - plan.price;
-      const updatedUserResult = await db.run(`
-        UPDATE users SET
-          plan = ?,
-          balance = ?,
-          updated_at = ?
-        WHERE id = ?
-      `, [plan.name, newBalance, new Date().toISOString(), auth.user.id]);
+      let updatedUserResult;
+
+      if (payment_method === 'balance') {
+        // 余额支付：立即扣除余额并更新套餐
+        const newBalance = user.balance - plan.price;
+        updatedUserResult = await db.run(`
+          UPDATE users SET
+            current_plan_id = ?,
+            balance = ?,
+            updated_at = ?
+          WHERE id = ?
+        `, [plan.id, newBalance, new Date().toISOString(), auth.user.id]);
+      } else {
+        // 第三方支付：暂时不更新套餐，等待支付完成回调
+        // 这里可以创建一个待支付的订阅记录
+        updatedUserResult = { changes: 1 }; // 模拟成功
+      }
 
       if ((updatedUserResult.changes ?? 0) === 0) {
         throw new Error('用户信息更新失败');
@@ -85,16 +105,23 @@ export async function POST(request: NextRequest) {
 
       // 记录账单
       const billingId = 'bill_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      const billingStatus = payment_method === 'balance' ? 'completed' : 'pending';
+      const billingDescription = payment_method === 'balance'
+        ? `${plan.display_name || plan.name} - 余额支付`
+        : `${plan.display_name || plan.name} - ${payment_method}支付`;
+
       await db.run(`
         INSERT INTO billing_records (
-          id, user_id, plan_id, amount, status, payment_method, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+          id, user_id, type, amount, currency, description, status, payment_method, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         billingId,
         auth.user.id,
-        plan_id,
+        'subscription',
         plan.price,
-        'completed',
+        'CNY',
+        billingDescription,
+        billingStatus,
         payment_method,
         new Date().toISOString()
       ]);
@@ -113,24 +140,44 @@ export async function POST(request: NextRequest) {
         });
       });
 
-    // 返回成功响应
-    return createAuthResponse({
-      message: '套餐购买成功',
-      user: {
+      // 根据支付方式返回不同信息
+      const responseData: any = {
+        message: payment_method === 'balance' ? '套餐购买成功！' : `已创建${payment_method === 'stripe' ? 'Stripe' : '支付宝'}支付订单，请完成支付`,
+        payment_method,
+        billing_id: billingId,
+        status: billingStatus,
+      };
+
+      // 第三方支付需要返回支付URL
+      if (payment_method !== 'balance') {
+        if (payment_method === 'stripe') {
+          // TODO: 集成真实的Stripe支付URL生成
+          responseData.payment_url = `/payment/stripe?billing_id=${billingId}&plan_id=${plan_id}&amount=${plan.price}`;
+        } else if (payment_method === 'alipay') {
+          // TODO: 集成真实的支付宝支付URL生成
+          responseData.payment_url = `/payment/alipay?billing_id=${billingId}&plan_id=${plan_id}&amount=${plan.price}`;
+        }
+      }
+
+      // 添加用户信息
+      responseData.user = {
         id: updatedUser.id,
         username: updatedUser.username,
         email: updatedUser.email,
         plan: updatedUser.plan,
         balance: updatedUser.balance,
         updated_at: updatedUser.updated_at
-      },
-      plan: {
+      };
+
+      responseData.plan = {
         id: plan.id,
         name: plan.name,
         price: plan.price,
         billing_period: plan.billing_period
-      }
-    }, '套餐购买成功');
+      };
+
+    // 返回成功响应
+    return createAuthResponse(responseData, responseData.message);
 
     } catch (innerError) {
       console.error('事务执行错误:', innerError);

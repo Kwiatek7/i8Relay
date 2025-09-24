@@ -31,7 +31,7 @@ const initDemoUsers = () => {
       id: 'demo-dev-001',
       username: '开发者',
       email: 'dev@demo.com',
-      plan: 'free',
+      plan: 'claude-code-free',
       balance: 50.00,
       apiKey: 'sk-demo-dev-key-001',
       avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=developer',

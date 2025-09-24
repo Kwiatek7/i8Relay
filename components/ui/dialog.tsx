@@ -60,7 +60,7 @@ const DialogContent = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "relative rounded-xl bg-white shadow-2xl animate-in fade-in-0 zoom-in-95 duration-200 dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 max-h-[90vh] flex flex-col",
+      "relative rounded-xl bg-white shadow-2xl animate-in fade-in-0 zoom-in-95 duration-200 dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 max-h-[90vh] flex flex-col p-6",
       className
     )}
     {...props}
@@ -76,7 +76,7 @@ const DialogHeader = ({
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "flex flex-col space-y-1.5 text-center sm:text-left mb-4",
+      "flex flex-col space-y-1.5 text-center sm:text-left",
       className
     )}
     {...props}
@@ -98,6 +98,18 @@ const DialogTitle = React.forwardRef<
   />
 ))
 DialogTitle.displayName = "DialogTitle"
+
+const DialogDescription = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
+>(({ className, ...props }, ref) => (
+  <p
+    ref={ref}
+    className={cn("text-sm text-gray-600 dark:text-gray-400", className)}
+    {...props}
+  />
+))
+DialogDescription.displayName = "DialogDescription"
 
 const DialogClose = React.forwardRef<
   HTMLButtonElement,
@@ -124,5 +136,6 @@ export {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogClose,
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../../lib/auth-context';
 import { useGroupedPlans } from '../../../lib/hooks/use-api';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PaymentDialog } from '@/components/ui/payment-dialog';
 import {
   Check,
   Star,
@@ -34,7 +35,10 @@ const getIconComponent = (iconName?: string) => {
 export default function PlansPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [activeGroup, setActiveGroup] = useState<string>('all');
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
 
   // 获取分组套餐数据
   const {
@@ -44,19 +48,47 @@ export default function PlansPage() {
     refresh: refreshPlans
   } = useGroupedPlans();
 
-  // 模拟当前套餐（从用户数据获取）
-  const currentPlan = user?.plan ? {
-    userPlanId: user.id,
-    startAt: new Date().toISOString(),
-    endAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    remainingDays: 30,
-    name: user.plan === 'free' ? '免费版' : user.plan === 'basic' ? '基础版' : user.plan === 'pro' ? '专业版' : '企业版',
-    description: '当前使用套餐',
-    price: user.plan === 'free' ? 0 : user.plan === 'basic' ? 99 : user.plan === 'pro' ? 299 : 999,
-    features: groupedPlans?.find(group =>
-      group.plans?.find((p: Plan) => p.id === user.plan)
-    )?.plans?.find((p: Plan) => p.id === user.plan)?.features || []
-  } : null;
+  // 获取当前套餐信息（从分组套餐数据中查找）
+  const getCurrentPlan = () => {
+    if (!user?.plan || !groupedPlans) return null;
+
+    // 尝试用不同方式查找当前套餐
+    for (const group of groupedPlans) {
+      // 先尝试用plan字段（可能是display_name或name）匹配
+      let planInGroup = group.plans?.find((p: Plan) =>
+        p.display_name === user.plan || p.name === user.plan || p.id === user.plan
+      );
+
+      if (planInGroup) {
+        return {
+          userPlanId: user.id,
+          startAt: new Date().toISOString(),
+          endAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          remainingDays: 30,
+          name: planInGroup.display_name || planInGroup.name,
+          description: planInGroup.description || '当前使用套餐',
+          price: planInGroup.price,
+          features: planInGroup.features || [],
+          planId: planInGroup.id
+        };
+      }
+    }
+
+    // 如果没找到，返回默认套餐信息
+    return {
+      userPlanId: user.id,
+      startAt: new Date().toISOString(),
+      endAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      remainingDays: 30,
+      name: user.plan,
+      description: '当前使用套餐',
+      price: 0,
+      features: [],
+      planId: user.plan
+    };
+  };
+
+  const currentPlan = getCurrentPlan();
 
   useEffect(() => {
     // 设置默认活动分组
@@ -64,9 +96,30 @@ export default function PlansPage() {
       const featuredGroup = groupedPlans.find(group => group.is_featured);
       if (featuredGroup) {
         setActiveGroup(featuredGroup.id);
+      } else if (groupedPlans.length > 0) {
+        // 如果没有推荐分组，选择第一个分组
+        setActiveGroup(groupedPlans[0].id);
       }
     }
-  }, [groupedPlans, activeGroup]);
+  }, [groupedPlans]);
+
+  // 处理从前台pricing页面传来的plan_id参数
+  useEffect(() => {
+    const planId = searchParams.get('plan_id');
+    if (planId && groupedPlans && groupedPlans.length > 0) {
+      // 查找对应的套餐
+      for (const group of groupedPlans) {
+        const planInGroup = group.plans?.find((p: Plan) => p.id === planId);
+        if (planInGroup) {
+          setSelectedPlan(planInGroup);
+          setPaymentDialogOpen(true);
+          // 清除URL参数，避免重复触发
+          router.replace('/dashboard/plans', undefined);
+          break;
+        }
+      }
+    }
+  }, [groupedPlans, searchParams, router]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -79,41 +132,94 @@ export default function PlansPage() {
     }).replace(/\//g, '/');
   };
 
-  const handlePlanSelect = async (plan: Plan) => {
-    try {
-      const response = await fetch('/api/billing/subscribe', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          plan_id: plan.id,
-          payment_method: 'balance',
-        }),
-      });
+  const handlePlanSelect = (plan: Plan) => {
+    setSelectedPlan(plan);
+    setPaymentDialogOpen(true);
+  };
 
-      if (response.ok) {
-        alert('购买成功！');
+  const handlePayment = async (planId: string, paymentMethod: 'balance' | 'stripe' | 'alipay') => {
+    const response = await fetch('/api/billing/subscribe', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        plan_id: planId,
+        payment_method: paymentMethod,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error?.message || '购买失败，请稍后重试');
+    }
+
+    if (paymentMethod === 'balance') {
+      // 余额支付成功，刷新页面
+      setTimeout(() => {
         window.location.reload();
-      } else {
-        const errorData = await response.json();
-        alert(errorData.error?.message || '购买失败');
-      }
-    } catch (error) {
-      console.error('购买套餐失败:', error);
-      alert('购买失败，请稍后重试');
+      }, 2000);
+      return { success: true };
+    } else {
+      // 第三方支付，返回支付URL
+      return {
+        success: true,
+        paymentUrl: data.data?.payment_url || `/payment?billing_id=${data.data?.billing_id}&method=${paymentMethod}`,
+        message: data.data?.message || '正在跳转到支付页面...'
+      };
     }
   };
 
+  const handleClosePaymentDialog = () => {
+    setPaymentDialogOpen(false);
+    setSelectedPlan(null);
+  };
+
   const handleRenew = () => {
-    router.push('/pricing');
+    if (!currentPlan || !groupedPlans) return;
+
+    // 查找当前套餐对应的Plan对象
+    for (const group of groupedPlans) {
+      const planInGroup = group.plans?.find((p: Plan) =>
+        p.display_name === currentPlan.name || p.name === currentPlan.name || p.id === currentPlan.planId
+      );
+
+      if (planInGroup) {
+        setSelectedPlan(planInGroup);
+        setPaymentDialogOpen(true);
+        return;
+      }
+    }
+
+    // 如果没找到对应的套餐，创建一个临时的套餐对象用于续费
+    const renewPlan: Plan = {
+      id: currentPlan.planId,
+      name: currentPlan.name,
+      display_name: currentPlan.name,
+      description: `续费 ${currentPlan.name}`,
+      price: currentPlan.price,
+      currency: 'CNY',
+      duration: 30,
+      billing_period: 'monthly',
+      features: currentPlan.features || [],
+      requests_limit: -1,
+      tokens_limit: -1,
+      models: [],
+      priority_support: false,
+      is_popular: false,
+      is_active: true
+    };
+
+    setSelectedPlan(renewPlan);
+    setPaymentDialogOpen(true);
   };
 
   const getButtonText = (plan: Plan) => {
     if (!currentPlan) {
       return '立即购买';
     }
-    if (plan.name === currentPlan.name) {
+    if (plan.id === currentPlan.planId) {
       return '当前套餐';
     }
     return '立即购买';
@@ -123,11 +229,11 @@ export default function PlansPage() {
     if (!currentPlan) {
       return false;
     }
-    return plan.name === currentPlan.name;
+    return plan.id === currentPlan.planId;
   };
 
-  const isCurrentPlan = (planName: string) => {
-    return currentPlan?.name === planName;
+  const isCurrentPlan = (planId: string) => {
+    return currentPlan?.planId === planId;
   };
 
   const activeGroupData = activeGroup === 'all'
@@ -197,8 +303,8 @@ export default function PlansPage() {
               </div>
             </CardHeader>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl p-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl p-4 flex flex-col justify-between min-h-[100px]">
                 <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                   {currentPlan.name}
                 </div>
@@ -207,7 +313,7 @@ export default function PlansPage() {
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl p-4">
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl p-4 flex flex-col justify-between min-h-[100px]">
                 <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                   ¥{currentPlan.price}
                 </div>
@@ -216,7 +322,7 @@ export default function PlansPage() {
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-xl p-4">
+              <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-xl p-4 flex flex-col justify-between min-h-[100px]">
                 <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                   {currentPlan.remainingDays}
                 </div>
@@ -225,7 +331,7 @@ export default function PlansPage() {
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 rounded-xl p-4">
+              <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 rounded-xl p-4 flex flex-col justify-between min-h-[100px]">
                 <div className="text-lg font-bold text-orange-600 dark:text-orange-400">
                   {formatDate(currentPlan.endAt).split(' ')[0]}
                 </div>
@@ -291,19 +397,19 @@ export default function PlansPage() {
                     推荐
                   </Badge>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
                   {group.plans?.map((plan: Plan) => {
                     const IconComponent = getIconComponent(plan.icon);
                     return (
                       <Card
                         key={plan.id}
-                        className={`relative p-6 transition-all duration-200 hover:shadow-lg ${
-                          isCurrentPlan(plan.name)
+                        className={`relative p-6 transition-all duration-200 hover:shadow-lg flex flex-col h-full min-h-[500px] ${
+                          isCurrentPlan(plan.id)
                             ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20'
                             : 'hover:shadow-xl'
                         }`}
                       >
-                        {isCurrentPlan(plan.name) && (
+                        {isCurrentPlan(plan.id) && (
                           <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                             <Badge className="bg-blue-600 text-white px-3 py-1">
                               当前套餐
@@ -336,7 +442,7 @@ export default function PlansPage() {
                           </div>
                         </CardHeader>
 
-                        <div className="space-y-3 mb-6">
+                        <div className="space-y-3 mb-6 flex-grow">
                           {plan.features?.map((feature, index) => (
                             <div key={index} className="flex items-center gap-2">
                               <Check className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" />
@@ -350,8 +456,8 @@ export default function PlansPage() {
                         <Button
                           onClick={() => handlePlanSelect(plan)}
                           disabled={isButtonDisabled(plan)}
-                          className={`w-full ${
-                            isCurrentPlan(plan.name)
+                          className={`w-full mt-auto ${
+                            isCurrentPlan(plan.id)
                               ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
                               : 'bg-blue-600 hover:bg-blue-700 text-white'
                           }`}
@@ -370,19 +476,19 @@ export default function PlansPage() {
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
                   {group.name}
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
                   {group.plans?.map((plan: Plan) => {
                     const IconComponent = getIconComponent(plan.icon);
                     return (
                       <Card
                         key={plan.id}
-                        className={`relative p-6 transition-all duration-200 hover:shadow-lg ${
-                          isCurrentPlan(plan.name)
+                        className={`relative p-6 transition-all duration-200 hover:shadow-lg flex flex-col h-full min-h-[500px] ${
+                          isCurrentPlan(plan.id)
                             ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20'
                             : 'hover:shadow-xl'
                         }`}
                       >
-                        {isCurrentPlan(plan.name) && (
+                        {isCurrentPlan(plan.id) && (
                           <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                             <Badge className="bg-blue-600 text-white px-3 py-1">
                               当前套餐
@@ -415,7 +521,7 @@ export default function PlansPage() {
                           </div>
                         </CardHeader>
 
-                        <div className="space-y-3 mb-6">
+                        <div className="space-y-3 mb-6 flex-grow">
                           {plan.features?.map((feature, index) => (
                             <div key={index} className="flex items-center gap-2">
                               <Check className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" />
@@ -429,8 +535,8 @@ export default function PlansPage() {
                         <Button
                           onClick={() => handlePlanSelect(plan)}
                           disabled={isButtonDisabled(plan)}
-                          className={`w-full ${
-                            isCurrentPlan(plan.name)
+                          className={`w-full mt-auto ${
+                            isCurrentPlan(plan.id)
                               ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
                               : 'bg-blue-600 hover:bg-blue-700 text-white'
                           }`}
@@ -448,19 +554,19 @@ export default function PlansPage() {
           // 显示特定分组
           activeGroupData && (
             <div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
                 {activeGroupData.plans?.map((plan: Plan) => {
                   const IconComponent = getIconComponent(plan.icon);
                   return (
                     <Card
                       key={plan.id}
-                      className={`relative p-6 transition-all duration-200 hover:shadow-lg ${
-                        isCurrentPlan(plan.name)
+                      className={`relative p-6 transition-all duration-200 hover:shadow-lg flex flex-col h-full min-h-[500px] ${
+                        isCurrentPlan(plan.id)
                           ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20'
                           : 'hover:shadow-xl'
                       }`}
                     >
-                      {isCurrentPlan(plan.name) && (
+                      {isCurrentPlan(plan.id) && (
                         <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                           <Badge className="bg-blue-600 text-white px-3 py-1">
                             当前套餐
@@ -493,7 +599,7 @@ export default function PlansPage() {
                         </div>
                       </CardHeader>
 
-                      <div className="space-y-3 mb-6">
+                      <div className="space-y-3 mb-6 flex-grow">
                         {plan.features?.map((feature, index) => (
                           <div key={index} className="flex items-center gap-2">
                             <Check className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" />
@@ -507,8 +613,8 @@ export default function PlansPage() {
                       <Button
                         onClick={() => handlePlanSelect(plan)}
                         disabled={isButtonDisabled(plan)}
-                        className={`w-full ${
-                          isCurrentPlan(plan.name)
+                        className={`w-full mt-auto ${
+                          isCurrentPlan(plan.id)
                             ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
                             : 'bg-blue-600 hover:bg-blue-700 text-white'
                         }`}
@@ -523,6 +629,15 @@ export default function PlansPage() {
           )
         )}
       </div>
+
+      {/* 支付对话框 */}
+      <PaymentDialog
+        open={paymentDialogOpen}
+        onClose={handleClosePaymentDialog}
+        plan={selectedPlan}
+        userBalance={user?.balance || 0}
+        onPayment={handlePayment}
+      />
     </DashboardLayout>
   );
 }

@@ -80,33 +80,8 @@ export default function PricingPage() {
       return;
     }
 
-    setPurchasing(planId);
-
-    try {
-      const response = await fetch('/api/billing/subscribe', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          plan_id: planId,
-          payment_method: 'balance',
-        }),
-      });
-
-      if (response.ok) {
-        alert('购买成功！');
-        window.location.reload();
-      } else {
-        const errorData = await response.json();
-        alert(errorData.error?.message || '购买失败');
-      }
-    } catch (error) {
-      console.error('购买套餐失败:', error);
-      alert('购买失败，请稍后重试');
-    } finally {
-      setPurchasing(null);
-    }
+    // 跳转到后台dashboard/plans页面，并通过URL参数传递要购买的套餐ID
+    router.push(`/dashboard/plans?plan_id=${planId}`);
   };
 
   const isCurrentPlan = (planName: string) => {
