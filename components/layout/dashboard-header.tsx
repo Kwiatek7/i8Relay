@@ -103,7 +103,7 @@ export function DashboardHeader({ onMenuClick, title, subtitle }: DashboardHeade
                 )}
                 <button
                   onClick={() => router.push(crumb.path)}
-                  className={`text-sm font-medium transition-colors hover:text-blue-600 dark:hover:text-blue-400 ${
+                  className={`text-sm font-medium transition-colors cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 ${
                     index === breadcrumbs.length - 1
                       ? 'text-gray-900 dark:text-white'
                       : 'text-gray-500 dark:text-gray-400'
@@ -182,7 +182,7 @@ export function DashboardHeader({ onMenuClick, title, subtitle }: DashboardHeade
           <div className="relative">
             <button
               onClick={handleUserMenuToggle}
-              className="flex items-center space-x-3 p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="flex items-center space-x-3 p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
             >
               <Avatar
                 className="w-8 h-8 border-2 border-gray-200 dark:border-gray-700"
@@ -245,7 +245,7 @@ export function DashboardHeader({ onMenuClick, title, subtitle }: DashboardHeade
                         router.push('/dashboard/profile');
                         setUserMenuOpen(false);
                       }}
-                      className="w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                      className="w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors cursor-pointer"
                     >
                       <User className="w-4 h-4 mr-3" />
                       个人资料
@@ -255,7 +255,7 @@ export function DashboardHeader({ onMenuClick, title, subtitle }: DashboardHeade
                         router.push('/dashboard/settings');
                         setUserMenuOpen(false);
                       }}
-                      className="w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                      className="w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors cursor-pointer"
                     >
                       <Settings className="w-4 h-4 mr-3" />
                       账户设置
@@ -267,7 +267,7 @@ export function DashboardHeader({ onMenuClick, title, subtitle }: DashboardHeade
                         setUserMenuOpen(false);
                         router.push('/');
                       }}
-                      className="w-full flex items-center px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                      className="w-full flex items-center px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors cursor-pointer"
                     >
                       <LogOut className="w-4 h-4 mr-3" />
                       退出登录

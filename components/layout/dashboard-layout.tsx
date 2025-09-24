@@ -17,6 +17,15 @@ export function DashboardLayout({ children, title, subtitle, className = "" }: D
   const { user, isAuthenticated, loading } = useAuth();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // 初始化侧边栏收缩状态
+  useEffect(() => {
+    const savedCollapsed = localStorage.getItem('sidebarCollapsed');
+    if (savedCollapsed !== null) {
+      setSidebarCollapsed(JSON.parse(savedCollapsed));
+    }
+  }, []);
 
   // 身份验证检查
   useEffect(() => {
@@ -43,17 +52,25 @@ export function DashboardLayout({ children, title, subtitle, className = "" }: D
     setSidebarOpen(false);
   };
 
+  const handleSidebarCollapse = () => {
+    const newCollapsed = !sidebarCollapsed;
+    setSidebarCollapsed(newCollapsed);
+    localStorage.setItem('sidebarCollapsed', JSON.stringify(newCollapsed));
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
 
       {/* 侧边栏 */}
       <DashboardSidebar
         isOpen={sidebarOpen}
+        isCollapsed={sidebarCollapsed}
         onClose={handleSidebarClose}
+        onCollapse={handleSidebarCollapse}
       />
 
       {/* 主内容区域 */}
-      <div className="lg:pl-72 min-h-screen">
+      <div className={`transition-all duration-300 min-h-screen ${sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-72'}`}>
 
         {/* 头部 */}
         <DashboardHeader
@@ -78,10 +95,10 @@ export function DashboardLayout({ children, title, subtitle, className = "" }: D
                 <div className="flex flex-col md:flex-row justify-between items-center text-sm text-gray-500 dark:text-gray-400">
                   <div className="flex items-center space-x-6">
                     <span>© 2024 i8Relay. 保留所有权利.</span>
-                    <a href="/terms" className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
+                    <a href="/terms" className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors cursor-pointer">
                       服务条款
                     </a>
-                    <a href="/privacy" className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
+                    <a href="/privacy" className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors cursor-pointer">
                       隐私政策
                     </a>
                   </div>

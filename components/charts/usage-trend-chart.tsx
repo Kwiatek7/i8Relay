@@ -248,7 +248,7 @@ export function UsageTrendChart({ data, className = "" }: UsageTrendChartProps) 
       <ReactECharts
         option={option}
         style={{
-          height: '380px',
+          height: '275px',
           width: '100%'
         }}
         opts={{
