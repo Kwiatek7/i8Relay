@@ -427,6 +427,9 @@ export class MySQLAdapter implements DatabaseAdapter {
     mysqlSQL = mysqlSQL.replace(/\bTEXT\s+DEFAULT\s+"[^"]*"/gi, 'TEXT');
     mysqlSQL = mysqlSQL.replace(/\bTEXT\s+DEFAULT\s+[^\s,)]+/gi, 'TEXT');
 
+    // 处理 MySQL 保留关键字
+    mysqlSQL = this.escapeReservedWords(mysqlSQL);
+
     return mysqlSQL;
   }
 
@@ -457,6 +460,58 @@ export class MySQLAdapter implements DatabaseAdapter {
     mysqlSchema = `SET FOREIGN_KEY_CHECKS = 0;\n${mysqlSchema}\nSET FOREIGN_KEY_CHECKS = 1;\n`;
 
     return mysqlSchema;
+  }
+
+  /**
+   * 处理 MySQL 保留关键字，添加反引号
+   */
+  private escapeReservedWords(sql: string): string {
+    // MySQL 常见保留关键字列表
+    const reservedWords = [
+      'key', 'order', 'group', 'index', 'table', 'database', 'schema',
+      'column', 'constraint', 'check', 'references', 'user', 'password',
+      'timestamp', 'date', 'time', 'year', 'month', 'day', 'hour', 'minute', 'second',
+      'count', 'sum', 'max', 'min', 'avg', 'distinct', 'unique', 'primary',
+      'foreign', 'default', 'null', 'not', 'auto_increment', 'comment'
+    ];
+
+    let escapedSQL = sql;
+
+    // 处理 WHERE 子句中的列名
+    reservedWords.forEach(word => {
+      // 匹配 WHERE column = ? 模式
+      const wherePattern = new RegExp(`\\bWHERE\\s+([^\\s]+\\s+[^\\s]+\\s+[^\\s]+\\s+[^\\s]+\\s+)?${word}\\s*=`, 'gi');
+      escapedSQL = escapedSQL.replace(wherePattern, (match) => {
+        return match.replace(new RegExp(`\\b${word}\\b`, 'gi'), `\`${word}\``);
+      });
+
+      // 匹配 AND column = ? 模式
+      const andPattern = new RegExp(`\\bAND\\s+${word}\\s*=`, 'gi');
+      escapedSQL = escapedSQL.replace(andPattern, (match) => {
+        return match.replace(new RegExp(`\\b${word}\\b`, 'gi'), `\`${word}\``);
+      });
+
+      // 匹配 SELECT 中的列名
+      const selectPattern = new RegExp(`\\bSELECT\\s+([^\\s,]*,\\s*)*${word}\\b`, 'gi');
+      escapedSQL = escapedSQL.replace(selectPattern, (match) => {
+        return match.replace(new RegExp(`\\b${word}\\b`, 'gi'), `\`${word}\``);
+      });
+
+      // 匹配 ORDER BY column 模式
+      const orderPattern = new RegExp(`\\bORDER\\s+BY\\s+${word}\\b`, 'gi');
+      escapedSQL = escapedSQL.replace(orderPattern, (match) => {
+        return match.replace(new RegExp(`\\b${word}\\b`, 'gi'), `\`${word}\``);
+      });
+
+      // 匹配 INSERT INTO table (columns) 中的列名
+      const insertPattern = new RegExp(`\\(([^)]*\\b${word}\\b[^)]*)\\)\\s+VALUES`, 'gi');
+      escapedSQL = escapedSQL.replace(insertPattern, (match, columns) => {
+        const escapedColumns = columns.replace(new RegExp(`\\b${word}\\b`, 'gi'), `\`${word}\``);
+        return match.replace(columns, escapedColumns);
+      });
+    });
+
+    return escapedSQL;
   }
 }
 

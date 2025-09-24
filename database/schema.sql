@@ -78,6 +78,24 @@ CREATE TABLE IF NOT EXISTS api_keys (
 -- 套餐相关表
 -- ============================================================================
 
+-- 套餐分组表
+CREATE TABLE IF NOT EXISTS plan_categories (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  display_name TEXT NOT NULL,
+  description TEXT,
+  icon TEXT, -- 分组图标
+  color TEXT DEFAULT '#3b82f6', -- 分组主题色
+
+  -- 显示配置
+  sort_order INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  is_featured BOOLEAN DEFAULT false, -- 是否为特色分组
+
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- 套餐计划表
 CREATE TABLE IF NOT EXISTS plans (
   id TEXT PRIMARY KEY,
@@ -99,6 +117,9 @@ CREATE TABLE IF NOT EXISTS plans (
   priority_support BOOLEAN DEFAULT false,
   is_popular BOOLEAN DEFAULT false,
   is_active BOOLEAN DEFAULT true,
+
+  -- 套餐分组
+  category_id TEXT,
 
   -- 显示顺序
   sort_order INTEGER DEFAULT 0,

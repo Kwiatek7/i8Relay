@@ -86,6 +86,24 @@ CREATE TABLE IF NOT EXISTS api_keys (
 -- 套餐相关表
 -- ============================================================================
 
+-- 套餐分组表
+CREATE TABLE IF NOT EXISTS plan_categories (
+  id VARCHAR(32) PRIMARY KEY DEFAULT REPLACE(uuid_generate_v4()::TEXT, '-', ''),
+  name VARCHAR(100) NOT NULL,
+  display_name VARCHAR(255) NOT NULL,
+  description TEXT,
+  icon VARCHAR(50), -- 分组图标
+  color VARCHAR(7) DEFAULT '#3b82f6', -- 分组主题色
+
+  -- 显示配置
+  sort_order INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  is_featured BOOLEAN DEFAULT false, -- 是否为特色分组
+
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- 套餐表
 CREATE TABLE IF NOT EXISTS plans (
   id VARCHAR(32) PRIMARY KEY,
@@ -107,6 +125,9 @@ CREATE TABLE IF NOT EXISTS plans (
   -- 功能配置
   models JSONB, -- 支持的模型列表，JSON数组
   features JSONB, -- 功能特性列表，JSON数组
+
+  -- 套餐分组
+  category_id VARCHAR(32),
 
   -- 显示配置
   priority_support BOOLEAN DEFAULT false,
@@ -373,7 +394,12 @@ CREATE INDEX IF NOT EXISTS idx_api_keys_key_hash ON api_keys(key_hash);
 CREATE INDEX IF NOT EXISTS idx_api_keys_is_active ON api_keys(is_active);
 
 -- 套餐相关索引
+CREATE INDEX IF NOT EXISTS idx_plan_categories_sort_order ON plan_categories(sort_order);
+CREATE INDEX IF NOT EXISTS idx_plan_categories_is_active ON plan_categories(is_active);
+CREATE INDEX IF NOT EXISTS idx_plan_categories_is_featured ON plan_categories(is_featured);
+
 CREATE INDEX IF NOT EXISTS idx_plans_name ON plans(name);
+CREATE INDEX IF NOT EXISTS idx_plans_category_id ON plans(category_id);
 CREATE INDEX IF NOT EXISTS idx_plans_is_active ON plans(is_active);
 CREATE INDEX IF NOT EXISTS idx_plans_sort_order ON plans(sort_order);
 

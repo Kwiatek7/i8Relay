@@ -88,6 +88,24 @@ CREATE TABLE IF NOT EXISTS `api_keys` (
 -- 套餐相关表
 -- ============================================================================
 
+-- 套餐分组表
+CREATE TABLE IF NOT EXISTS `plan_categories` (
+  `id` VARCHAR(32) PRIMARY KEY,
+  `name` VARCHAR(100) NOT NULL,
+  `display_name` VARCHAR(255) NOT NULL,
+  `description` TEXT,
+  `icon` VARCHAR(50), -- 分组图标
+  `color` VARCHAR(7) DEFAULT '#3b82f6', -- 分组主题色
+
+  -- 显示配置
+  `sort_order` INT DEFAULT 0,
+  `is_active` BOOLEAN DEFAULT TRUE,
+  `is_featured` BOOLEAN DEFAULT FALSE, -- 是否为特色分组
+
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- 套餐计划表
 CREATE TABLE IF NOT EXISTS `plans` (
   `id` VARCHAR(32) PRIMARY KEY,
@@ -109,6 +127,9 @@ CREATE TABLE IF NOT EXISTS `plans` (
   `priority_support` BOOLEAN DEFAULT FALSE,
   `is_popular` BOOLEAN DEFAULT FALSE,
   `is_active` BOOLEAN DEFAULT TRUE,
+
+  -- 套餐分组
+  `category_id` VARCHAR(32),
 
   -- 显示顺序
   `sort_order` INT DEFAULT 0,
@@ -381,6 +402,16 @@ CREATE INDEX `idx_user_sessions_expires_at` ON `user_sessions`(`expires_at`);
 -- API密钥表索引
 CREATE INDEX `idx_api_keys_user_id` ON `api_keys`(`user_id`);
 CREATE INDEX `idx_api_keys_active` ON `api_keys`(`is_active`);
+
+-- 套餐分组表索引
+CREATE INDEX `idx_plan_categories_sort_order` ON `plan_categories`(`sort_order`);
+CREATE INDEX `idx_plan_categories_active` ON `plan_categories`(`is_active`);
+CREATE INDEX `idx_plan_categories_featured` ON `plan_categories`(`is_featured`);
+
+-- 套餐表索引
+CREATE INDEX `idx_plans_category_id` ON `plans`(`category_id`);
+CREATE INDEX `idx_plans_active` ON `plans`(`is_active`);
+CREATE INDEX `idx_plans_sort_order` ON `plans`(`sort_order`);
 
 -- 订阅表索引
 CREATE INDEX `idx_user_subscriptions_user_id` ON `user_subscriptions`(`user_id`);

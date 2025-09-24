@@ -2,21 +2,31 @@
 -- 创建时间: 2025-09-22
 
 -- ============================================================================
+-- 初始化套餐分组数据
+-- ============================================================================
+
+INSERT OR REPLACE INTO plan_categories (id, name, display_name, description, icon, color, sort_order, is_featured) VALUES
+('claude-code', 'claude-code', 'Claude Code', '专业的AI编程助手，为开发者提供智能代码生成和优化服务', 'Code', '#6366f1', 1, true),
+('codex', 'codex', 'CodeX', '高性能代码解决方案，适合企业级开发和大型项目', 'Zap', '#8b5cf6', 2, true),
+('api-relay', 'api-relay', 'API中转', '稳定可靠的API中转服务，支持多种AI模型接口', 'Globe', '#06b6d4', 3, false),
+('enterprise', 'enterprise', '企业定制', '为企业客户量身定制的专属解决方案', 'Building', '#10b981', 4, false);
+
+-- ============================================================================
 -- 初始化套餐数据
 -- ============================================================================
 
-INSERT OR REPLACE INTO plans (id, name, display_name, description, price, currency, duration_days, requests_limit, tokens_limit, models, features, priority_support, is_popular, is_active, sort_order) VALUES
+INSERT OR REPLACE INTO plans (id, name, display_name, description, price, currency, duration_days, requests_limit, tokens_limit, models, features, priority_support, is_popular, is_active, sort_order, category_id) VALUES
 -- 免费体验版
-('free', 'free', '体验版', '适合个人用户体验AI服务', 0.00, 'CNY', 30, 10000, 100000, '["gpt-3.5-turbo", "claude-3-haiku"]', '["每月10万Tokens", "Claude-3-Haiku", "基础API支持", "邮件技术支持"]', false, false, true, 1),
+('free', 'free', '体验版', '适合个人用户体验AI服务', 0.00, 'CNY', 30, 10000, 100000, '["gpt-3.5-turbo", "claude-3-haiku"]', '["每月10万Tokens", "Claude-3-Haiku", "基础API支持", "邮件技术支持"]', false, false, true, 1, 'claude-code'),
 
 -- 基础版
-('basic', 'basic', '基础版', '适合轻度使用的个人开发者', 29.90, 'CNY', 30, 100000, 500000, '["gpt-3.5-turbo", "claude-3-haiku", "claude-3-sonnet"]', '["每月50万Tokens", "Claude-3-Haiku + Sonnet", "标准API支持", "工单技术支持", "7天数据保留"]', false, false, true, 2),
+('basic', 'basic', '基础版', '适合轻度使用的个人开发者', 29.90, 'CNY', 30, 100000, 500000, '["gpt-3.5-turbo", "claude-3-haiku", "claude-3-sonnet"]', '["每月50万Tokens", "Claude-3-Haiku + Sonnet", "标准API支持", "工单技术支持", "7天数据保留"]', false, false, true, 2, 'claude-code'),
 
 -- 标准版（推荐）
-('standard', 'standard', '标准版', '适合中小企业和团队使用', 99.90, 'CNY', 30, 500000, 2000000, '["gpt-3.5-turbo", "gpt-4", "claude-3-haiku", "claude-3-sonnet", "claude-3.5-sonnet"]', '["每月200万Tokens", "Claude全系列模型", "高级API支持", "优先技术支持", "30天数据保留", "API监控面板"]', true, true, true, 3),
+('standard', 'standard', '标准版', '适合中小企业和团队使用', 99.90, 'CNY', 30, 500000, 2000000, '["gpt-3.5-turbo", "gpt-4", "claude-3-haiku", "claude-3-sonnet", "claude-3.5-sonnet"]', '["每月200万Tokens", "Claude全系列模型", "高级API支持", "优先技术支持", "30天数据保留", "API监控面板"]', true, true, true, 3, 'codex'),
 
 -- 专业版
-('pro', 'pro', '专业版', '适合大型企业和高频使用', 299.90, 'CNY', 30, 2000000, 8000000, '["*"]', '["每月800万Tokens", "Claude全系列模型", "企业级API支持", "24/7技术支持", "90天数据保留", "高级监控面板", "专属客户经理"]', true, false, true, 4),
+('pro', 'pro', '专业版', '适合大型企业和高频使用', 299.90, 'CNY', 30, 2000000, 8000000, '["*"]', '["每月800万Tokens", "Claude全系列模型", "企业级API支持", "24/7技术支持", "90天数据保留", "高级监控面板", "专属客户经理"]', true, false, true, 4, 'codex'),
 
 -- 拼车版
 ('shared', 'shared', '拼车版', '多人共享，经济实惠', 19.90, 'CNY', 30, 150000, 300000, '["gpt-3.5-turbo", "claude-3-haiku", "claude-3-sonnet"]', '["共享30万Tokens", "Claude-3-Haiku + Sonnet", "基础API支持", "社区技术支持", "适合学习和测试"]', false, false, true, 5);
