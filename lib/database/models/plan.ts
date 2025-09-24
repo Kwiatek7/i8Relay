@@ -208,11 +208,21 @@ export class PlanModel extends BaseModel {
       throw new Error('套餐不存在');
     }
 
-    const cleanData = this.cleanData({
+    // 字段映射：API字段 -> 数据库字段
+    const mappedData = {
       ...updateData,
+      // name字段映射到display_name（保持name字段也更新）
+      ...(updateData.name && { 
+        display_name: updateData.name,
+        name: updateData.name 
+      })
+    };
+
+    const cleanData = this.cleanData({
+      ...mappedData,
       // 如果有数组字段，需要JSON化
-      ...(updateData.models && { models: JSON.stringify(updateData.models) }),
-      ...(updateData.features && { features: JSON.stringify(updateData.features) }),
+      ...(mappedData.models && { models: JSON.stringify(mappedData.models) }),
+      ...(mappedData.features && { features: JSON.stringify(mappedData.features) }),
       updated_at: this.getCurrentTimestamp()
     });
 
