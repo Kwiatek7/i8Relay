@@ -46,7 +46,7 @@ const initDemoUsers = () => {
   console.log('✅ 演示用户创建成功！');
   console.log('📝 可用登录账号：');
   demoUsers.forEach(user => {
-    console.log(`   邮箱: ${user.email} | 密码: password123 | 套餐: ${user.plan}`);
+    console.log(`   邮箱: ${user.email} | 密码: demo123 | 套餐: ${user.plan}`);
   });
   console.log('\n🔄 请刷新页面后使用这些账号登录');
 };

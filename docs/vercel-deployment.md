@@ -137,14 +137,14 @@ GOOGLE_API_KEY=your-google-api-key
 ```
 管理员账户：
 - 邮箱：admin@i8relay.com
-- 密码：admin123456
+- 密码：admin123
 - 角色：超级管理员
 - 套餐：专业版
 - 余额：¥1000
 
 演示用户：
-- demo@i8relay.com / password123
-- demo2@i8relay.com / password123
+- demo@i8relay.com / demo123
+- demo2@i8relay.com / demo123
 ```
 
 #### 套餐配置

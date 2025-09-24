@@ -169,7 +169,7 @@ ON CONFLICT (id) DO UPDATE SET
   footer_text = EXCLUDED.footer_text;
 
 -- ============================================================================
--- 创建默认管理员用户（密码: admin123456）
+-- 创建默认管理员用户（密码: admin123）
 -- ============================================================================
 
 -- 注意：这里使用的是示例密码hash，实际部署时需要修改
@@ -181,7 +181,7 @@ INSERT INTO users (
   'admin-001',
   '系统管理员',
   'admin@i8relay.com',
-  '$2b$12$LQv3c1yqBw2LenN5Qc8LDOHqrOQK.V5O9x7Y.VvHV.H5W.K5K.K5K', -- admin123456的hash
+  '$2a$12$cYZ9WKz38YXAjMAlSx.oRe1sw...vJnwBXZfGLtsgs38JCOlpejHi', -- admin123的hash
   'admin_salt_001',
   'super_admin',
   'active',
@@ -215,7 +215,7 @@ INSERT INTO users (
 ('demo-user-001',
   '演示用户1',
   'demo@i8relay.com',
-  '$2b$12$LQv3c1yqBw2LenN5Qc8LDOHqrOQK.V5O9x7Y.VvHV.H5W.K5K.K5K', -- password123
+  '$2a$12$7tub7mLbR78AHl3wtAOvBegfavcfY8dvE/P00/enSwPLiL37Kc/Ey', -- demo123
   'demo_salt_001',
   'user',
   'active',
@@ -230,7 +230,7 @@ INSERT INTO users (
 ('demo-user-002',
   '演示用户2',
   'demo2@i8relay.com',
-  '$2b$12$LQv3c1yqBw2LenN5Qc8LDOHqrOQK.V5O9x7Y.VvHV.H5W.K5K.K5K', -- password123
+  '$2a$12$7tub7mLbR78AHl3wtAOvBegfavcfY8dvE/P00/enSwPLiL37Kc/Ey', -- demo123
   'demo_salt_002',
   'user',
   'active',

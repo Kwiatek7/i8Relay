@@ -35,7 +35,8 @@ export class VercelPostgresAdapter implements DatabaseAdapter {
       const pgQuery = this.convertSQLiteToPostgreSQL(sqlQuery);
 
       // Vercel Postgres 使用模板字符串
-      const result = await sql.query(pgQuery, params ? Object.values(params) : []);
+      const processedParams = params ? this.preprocessParams(Object.values(params)) : [];
+      const result = await sql.query(pgQuery, processedParams);
       return result.rows[0] || null;
     } catch (error) {
       const enhancedError = this.enhanceError(error, 'QUERY', sqlQuery);
@@ -49,7 +50,8 @@ export class VercelPostgresAdapter implements DatabaseAdapter {
 
     try {
       const pgQuery = this.convertSQLiteToPostgreSQL(sqlQuery);
-      const result = await sql.query(pgQuery, params ? Object.values(params) : []);
+      const processedParams = params ? this.preprocessParams(Object.values(params)) : [];
+      const result = await sql.query(pgQuery, processedParams);
       return result.rows;
     } catch (error) {
       const enhancedError = this.enhanceError(error, 'QUERY', sqlQuery);
@@ -63,7 +65,8 @@ export class VercelPostgresAdapter implements DatabaseAdapter {
 
     try {
       const pgQuery = this.convertSQLiteToPostgreSQL(sqlQuery);
-      const result = await sql.query(pgQuery, params ? Object.values(params) : []);
+      const processedParams = params ? this.preprocessParams(Object.values(params)) : [];
+      const result = await sql.query(pgQuery, processedParams);
 
       return {
         lastID: result.rows[0]?.id || undefined,
@@ -93,6 +96,32 @@ export class VercelPostgresAdapter implements DatabaseAdapter {
       console.error('批量执行失败:', enhancedError.message);
       throw enhancedError;
     }
+  }
+
+  /**
+   * 预处理参数，处理日期时间格式和布尔值
+   * PostgreSQL 需要特定格式的日期时间和布尔值
+   */
+  private preprocessParams(params: any[]): any[] {
+    return params.map(param => {
+      // 处理 Date 对象
+      if (param instanceof Date) {
+        return param.toISOString();
+      }
+      
+      // 处理 ISO 8601 日期字符串
+      if (typeof param === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(param)) {
+        // PostgreSQL 能够正确处理 ISO 8601 格式，不需要转换
+        return param;
+      }
+      
+      // 处理布尔值（PostgreSQL 原生支持布尔类型，但确保一致性）
+      if (typeof param === 'boolean') {
+        return param;
+      }
+      
+      return param;
+    });
   }
 
   async close(): Promise<void> {

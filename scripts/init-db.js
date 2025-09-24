@@ -47,7 +47,7 @@ try {
   console.log('✅ 数据库初始化完成！');
   console.log('🔑 默认管理员账号:');
   console.log('   邮箱: admin@i8relay.com');
-  console.log('   密码: admin123456');
+  console.log('   密码: admin123');
 
 } catch (error) {
   console.error('❌ 数据库初始化失败:', error);
