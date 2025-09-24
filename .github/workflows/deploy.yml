@@ -1,0 +1,123 @@
+name: Deploy Application
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+jobs:
+  # Vercel 部署 (推荐用于 Next.js 应用)
+  deploy-vercel:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Deploy to Vercel
+      uses: amondnet/vercel-action@v25
+      with:
+        vercel-token: ${{ secrets.VERCEL_TOKEN }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+        vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+        working-directory: ./
+
+  # 服务器部署 (VPS/云服务器)
+  deploy-server:
+    runs-on: ubuntu-latest
+    if: false  # 设置为 true 来启用服务器部署
+    environment: production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Deploy to server via SSH
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.PRIVATE_KEY }}
+        port: ${{ secrets.PORT }}
+        script: |
+          cd /path/to/your/app
+          git pull origin main
+          docker-compose down
+          docker-compose pull
+          docker-compose up -d
+          docker system prune -f
+
+  # Docker 容器部署
+  deploy-docker:
+    runs-on: ubuntu-latest
+    if: false  # 设置为 true 来启用 Docker 部署
+    needs: [build]  # 需要先构建 Docker 镜像
+    environment: production
+
+    steps:
+    - name: Deploy to Docker server
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.DOCKER_HOST }}
+        username: ${{ secrets.DOCKER_USER }}
+        key: ${{ secrets.DOCKER_PRIVATE_KEY }}
+        script: |
+          docker pull ghcr.io/${{ github.repository }}:latest
+          docker stop i8relay-app || true
+          docker rm i8relay-app || true
+          docker run -d \
+            --name i8relay-app \
+            --restart unless-stopped \
+            -p 3000:3000 \
+            -v /data/i8relay:/app/data \
+            -e DATABASE_PATH=/app/data/aiporxy.db \
+            -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+            -e OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" \
+            -e ANTHROPIC_API_KEY="${{ secrets.ANTHROPIC_API_KEY }}" \
+            ghcr.io/${{ github.repository }}:latest
+
+  # 健康检查
+  health-check:
+    runs-on: ubuntu-latest
+    needs: [deploy-vercel]
+    if: always() && (needs.deploy-vercel.result == 'success' || needs.deploy-server.result == 'success' || needs.deploy-docker.result == 'success')
+
+    steps:
+    - name: Health check
+      run: |
+        sleep 30  # 等待部署完成
+        curl -f ${{ secrets.APP_URL }}/api/health || exit 1
+        echo "✅ 应用部署成功并运行正常"
+
+  # 通知
+  notify:
+    runs-on: ubuntu-latest
+    needs: [health-check]
+    if: always()
+
+    steps:
+    - name: Notify deployment result
+      uses: 8398a7/action-slack@v3
+      if: false  # 设置为 true 并配置 Slack webhook 来启用通知
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+        text: |
+          部署状态: ${{ job.status }}
+          仓库: ${{ github.repository }}
+          分支: ${{ github.ref }}
+          提交: ${{ github.sha }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
