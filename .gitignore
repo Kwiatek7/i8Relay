@@ -52,4 +52,4 @@ next-env.d.ts
 CLAUDE.md
 
 # 脚本目录 - 开发测试用，不提交到代码仓库
-scripts/
+scripts//data/
