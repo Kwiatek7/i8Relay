@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../lib/auth-context';
 import { useApiKeys } from '../../../lib/hooks/use-api';
 import { authService } from '../../../lib/auth/service';
+import { useToast } from '@/components/ui/toast';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,7 @@ import {
 export default function ProfilePage() {
   const { user, isAuthenticated, loading: authLoading, logout, updateProfile } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -122,13 +124,25 @@ export default function ProfilePage() {
       });
 
       if (result.success) {
-        alert('个人信息更新成功');
+        toast({
+          type: 'success',
+          title: '更新成功',
+          description: '个人信息已成功更新'
+        });
       } else {
-        alert(result.error || '更新失败');
+        toast({
+          type: 'error',
+          title: '更新失败',
+          description: result.error || '请稍后重试'
+        });
       }
     } catch (error) {
       console.error('Profile update error:', error);
-      alert('更新失败，请稍后重试');
+      toast({
+        type: 'error',
+        title: '更新失败',
+        description: '网络错误，请稍后重试'
+      });
     }
   };
 
@@ -137,17 +151,29 @@ export default function ProfilePage() {
 
     // 基本验证
     if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
-      alert('请填写所有密码字段');
+      toast({
+        type: 'warning',
+        title: '验证失败',
+        description: '请填写所有密码字段'
+      });
       return;
     }
 
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      alert('新密码和确认密码不匹配');
+      toast({
+        type: 'warning',
+        title: '验证失败',
+        description: '新密码和确认密码不匹配'
+      });
       return;
     }
 
     if (passwordForm.newPassword.length < 8) {
-      alert('新密码长度至少8位');
+      toast({
+        type: 'warning',
+        title: '验证失败',
+        description: '新密码长度至少8位'
+      });
       return;
     }
 
@@ -158,7 +184,11 @@ export default function ProfilePage() {
       });
 
       if (result.success) {
-        alert('密码修改成功');
+        toast({
+          type: 'success',
+          title: '修改成功',
+          description: '密码已成功修改'
+        });
         // 重置表单
         setPasswordForm({
           currentPassword: '',
@@ -166,11 +196,19 @@ export default function ProfilePage() {
           confirmPassword: ''
         });
       } else {
-        alert(result.error?.message || '密码修改失败');
+        toast({
+          type: 'error',
+          title: '修改失败',
+          description: result.error?.message || '请稍后重试'
+        });
       }
     } catch (error) {
       console.error('Password update error:', error);
-      alert('密码修改失败，请稍后重试');
+      toast({
+        type: 'error',
+        title: '修改失败',
+        description: '网络错误，请稍后重试'
+      });
     }
   };
 
@@ -179,29 +217,53 @@ export default function ProfilePage() {
     try {
       const result = await createApiKey('默认密钥');
       if (result.success) {
-        alert('API密钥生成成功');
+        toast({
+          type: 'success',
+          title: '生成成功',
+          description: 'API密钥已成功生成'
+        });
         refreshApiKeys(); // 刷新密钥列表
       } else {
-        alert(result.error || 'API密钥生成失败');
+        toast({
+          type: 'error',
+          title: '生成失败',
+          description: result.error || '请稍后重试'
+        });
       }
     } catch (error) {
       console.error('API key generation error:', error);
-      alert('API密钥生成失败，请稍后重试');
+      toast({
+        type: 'error',
+        title: '生成失败',
+        description: '网络错误，请稍后重试'
+      });
     }
   };
 
   const copyApiKey = async () => {
     if (!primaryApiKey?.key) {
-      alert('没有可复制的API密钥');
+      toast({
+        type: 'warning',
+        title: '复制失败',
+        description: '没有可复制的API密钥'
+      });
       return;
     }
 
     try {
       await navigator.clipboard.writeText(primaryApiKey.key);
-      alert('API密钥已复制到剪贴板');
+      toast({
+        type: 'success',
+        title: '复制成功',
+        description: 'API密钥已复制到剪贴板'
+      });
     } catch (error) {
       console.error('Copy failed:', error);
-      alert('复制失败，请手动复制');
+      toast({
+        type: 'error',
+        title: '复制失败',
+        description: '请手动复制密钥'
+      });
     }
   };
 
@@ -212,10 +274,18 @@ export default function ProfilePage() {
       : '/api';
     try {
       await navigator.clipboard.writeText(baseUrl);
-      alert('API地址已复制到剪贴板');
+      toast({
+        type: 'success',
+        title: '复制成功',
+        description: 'API地址已复制到剪贴板'
+      });
     } catch (error) {
       console.error('Copy failed:', error);
-      alert('复制失败，请手动复制');
+      toast({
+        type: 'error',
+        title: '复制失败',
+        description: '请手动复制地址'
+      });
     }
   };
 
