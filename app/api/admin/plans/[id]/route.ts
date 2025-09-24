@@ -51,21 +51,15 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       }
     }
 
-    if (updateData.token_limit !== undefined) {
-      if (typeof updateData.token_limit !== 'number' || updateData.token_limit < 0) {
+    if (updateData.tokens_limit !== undefined) {
+      if (typeof updateData.tokens_limit !== 'number' || updateData.tokens_limit < 0) {
         return createErrorResponse(new Error('Token限制必须是非负数'), 400);
       }
     }
 
-    if (updateData.rate_limit_per_minute !== undefined) {
-      if (typeof updateData.rate_limit_per_minute !== 'number' || updateData.rate_limit_per_minute < 1) {
-        return createErrorResponse(new Error('每分钟限制必须是正数'), 400);
-      }
-    }
-
-    if (updateData.rate_limit_per_day !== undefined) {
-      if (typeof updateData.rate_limit_per_day !== 'number' || updateData.rate_limit_per_day < 1) {
-        return createErrorResponse(new Error('每天限制必须是正数'), 400);
+    if (updateData.requests_limit !== undefined) {
+      if (typeof updateData.requests_limit !== 'number' || updateData.requests_limit < 1) {
+        return createErrorResponse(new Error('请求限制必须是正数'), 400);
       }
     }
 

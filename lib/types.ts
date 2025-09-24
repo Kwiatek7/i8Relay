@@ -90,6 +90,8 @@ export interface Plan {
   category_id?: string;
   category_name?: string;
   icon?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 // 套餐分组类型

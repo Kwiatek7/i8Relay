@@ -405,7 +405,9 @@ export class PlanModel extends BaseModel {
       is_popular: Boolean(plan.is_popular),
       is_active: Boolean(plan.is_active),
       category_id: plan.category_id,
-      category_name: plan.category_name
+      category_name: plan.category_name,
+      created_at: plan.created_at,
+      updated_at: plan.updated_at
     };
   }
 
