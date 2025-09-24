@@ -103,33 +103,62 @@ export class SQLiteAdapter implements DatabaseAdapter {
     return this.connected;
   }
 
-  async initialize(): Promise<void> {
-    const SCHEMA_PATH = path.join(process.cwd(), 'database', 'schema.sql');
-    const SEED_PATH = path.join(process.cwd(), 'database', 'seed.sql');
-
+  async needsInitialization(): Promise<boolean> {
     try {
-      // 检查是否已经初始化
+      if (!this.connected) await this.connect();
+
+      // 检查是否存在关键表
       const result = await this.get(`
         SELECT name FROM sqlite_master
         WHERE type='table' AND name='users'
       `);
 
-      if (!result) {
-        console.log('🔧 正在初始化 SQLite 数据库架构...');
+      return !result; // 如果没有 users 表，则需要初始化
+    } catch (error) {
+      console.error('检查 SQLite 数据库状态失败:', error);
+      return true; // 出错时假设需要初始化
+    }
+  }
 
-        // 执行 schema.sql
-        if (fs.existsSync(SCHEMA_PATH)) {
-          const schema = fs.readFileSync(SCHEMA_PATH, 'utf8');
-          await this.exec(schema);
-          console.log('✅ 数据库架构已创建');
-        }
+  async initializeIfNeeded(): Promise<void> {
+    try {
+      const needsInit = await this.needsInitialization();
 
-        // 执行 seed.sql
-        if (fs.existsSync(SEED_PATH)) {
-          const seedData = fs.readFileSync(SEED_PATH, 'utf8');
-          await this.exec(seedData);
-          console.log('✅ 初始化数据已导入');
+      if (needsInit) {
+        console.log('🔍 检测到 SQLite 数据库为空，开始自动初始化...');
+        await this.initialize();
+        console.log('🎉 SQLite 数据库自动初始化完成！');
+      } else {
+        // 只在非构建环境显示已初始化信息
+        if (process.env.NODE_ENV !== 'production' && !process.env.NEXT_PHASE) {
+          console.log('✅ SQLite 数据库已初始化，跳过自动初始化');
         }
+      }
+    } catch (error) {
+      console.error('❌ SQLite 数据库自动初始化失败:', error);
+      throw error;
+    }
+  }
+
+  async initialize(): Promise<void> {
+    const SCHEMA_PATH = path.join(process.cwd(), 'database', 'schema.sql');
+    const SEED_PATH = path.join(process.cwd(), 'database', 'seed.sql');
+
+    try {
+      console.log('🔧 正在初始化 SQLite 数据库架构...');
+
+      // 执行 schema.sql
+      if (fs.existsSync(SCHEMA_PATH)) {
+        const schema = fs.readFileSync(SCHEMA_PATH, 'utf8');
+        await this.exec(schema);
+        console.log('✅ 数据库架构已创建');
+      }
+
+      // 执行 seed.sql
+      if (fs.existsSync(SEED_PATH)) {
+        const seedData = fs.readFileSync(SEED_PATH, 'utf8');
+        await this.exec(seedData);
+        console.log('✅ 初始化数据已导入');
       }
     } catch (error) {
       console.error('❌ SQLite 数据库初始化失败:', error);

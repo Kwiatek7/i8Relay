@@ -7,7 +7,6 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "db:init": "tsx scripts/init-database.ts",
     "db:backup": "node -e \"require('./lib/database/connection').default.backup()\"",
     "db:stats": "node -e \"console.log(require('./lib/database/connection').default.getStats())\""
   },
@@ -36,7 +35,8 @@
     "react-dom": "19.1.0",
     "react-syntax-highlighter": "^15.6.6",
     "sqlite3": "^5.1.7",
-    "stripe": "^16.12.0"
+    "stripe": "^16.12.0",
+    "mysql2": "^3.11.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

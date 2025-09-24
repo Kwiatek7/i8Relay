@@ -51,8 +51,8 @@ class DatabaseConnection {
       // 连接数据库
       await this.adapter.connect();
 
-      // 初始化数据库架构
-      await this.adapter.initialize();
+      // 智能初始化数据库架构（仅在需要时）
+      await this.adapter.initializeIfNeeded();
 
       // 创建兼容的接口包装器
       this.instance = {
@@ -69,7 +69,8 @@ class DatabaseConnection {
         console.log('🎯 数据库环境信息:', {
           推荐适配器: envInfo.recommendedAdapter,
           SQLite可用: envInfo.sqliteAvailable,
-          Postgres可用: envInfo.postgresAvailable
+          Postgres可用: envInfo.postgresAvailable,
+          MySQL可用: envInfo.mysqlAvailable
         });
       }
 

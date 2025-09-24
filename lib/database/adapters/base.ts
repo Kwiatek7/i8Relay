@@ -13,6 +13,8 @@ export interface DatabaseAdapter {
 
   // 数据库特定功能
   initialize(): Promise<void>;
+  needsInitialization(): Promise<boolean>;  // 检查是否需要初始化
+  initializeIfNeeded(): Promise<void>;     // 智能初始化
   backup?(backupPath?: string): Promise<void>;
   getStats?(): Promise<DatabaseStats>;
 }

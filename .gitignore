@@ -50,3 +50,6 @@ next-env.d.ts
 
 # Claude Code 个人配置文件
 CLAUDE.md
+
+# 脚本目录 - 开发测试用，不提交到代码仓库
+scripts/
