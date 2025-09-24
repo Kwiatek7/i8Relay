@@ -2,7 +2,7 @@
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../../lib/auth-context';
 import { useGroupedPlans } from '../../../lib/hooks/use-api';
@@ -34,7 +34,8 @@ const getIconComponent = (iconName?: string) => {
   }
 };
 
-export default function PlansPage() {
+// 内部组件处理 useSearchParams
+function PlansContent() {
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -210,7 +211,11 @@ export default function PlansPage() {
       models: [],
       priority_support: false,
       is_popular: false,
-      is_active: true
+      is_active: true,
+      category_id: undefined,
+      category_name: undefined,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
 
     setSelectedPlan(renewPlan);
@@ -641,5 +646,30 @@ export default function PlansPage() {
         onPayment={handlePayment}
       />
     </DashboardLayout>
+  );
+}
+
+// 主导出组件，用 Suspense 包裹
+export default function PlansPage() {
+  return (
+    <Suspense fallback={
+      <DashboardLayout
+        title="套餐计划"
+        subtitle="选择适合您的套餐计划"
+      >
+        <div className="animate-pulse">
+          <div className="bg-white p-6 rounded-lg shadow">
+            <div className="h-6 bg-gray-200 rounded w-1/4 mb-6"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="h-96 bg-gray-200 rounded"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </DashboardLayout>
+    }>
+      <PlansContent />
+    </Suspense>
   );
 }
