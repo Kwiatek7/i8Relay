@@ -13,7 +13,10 @@ const nextConfig: NextConfig = {
         pathname: '/7.x/**',
       }
     ]
-  }
+  },
+
+  // 修复docs页面文件系统访问问题
+  serverExternalPackages: ['fs', 'path']
 };
 
 export default nextConfig;

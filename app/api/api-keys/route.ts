@@ -61,7 +61,7 @@ async function getUserApiKeys(userId: string) {
       `SELECT
         id,
         name,
-        key_prefix,
+        key_preview,
         permissions,
         last_used_at,
         is_active,
@@ -98,7 +98,7 @@ async function createApiKey(userId: string, name: string, permissions: string[])
     // 插入数据库
     await db.run(
       `INSERT INTO api_keys (
-        id, user_id, name, key_hash, key_prefix, permissions, is_active, created_at, updated_at
+        id, user_id, name, key_hash, key_preview, permissions, is_active, created_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
@@ -117,7 +117,7 @@ async function createApiKey(userId: string, name: string, permissions: string[])
       id,
       name,
       key: apiKey, // 只在创建时返回完整密钥
-      key_prefix: keyPrefix,
+      key_preview: keyPrefix,
       permissions,
       is_active: true,
       created_at: now
