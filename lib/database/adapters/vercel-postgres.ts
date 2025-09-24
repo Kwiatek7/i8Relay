@@ -107,17 +107,17 @@ export class VercelPostgresAdapter implements DatabaseAdapter {
 
   async needsInitialization(): Promise<boolean> {
     try {
-      console.log('🔍 检查数据库表是否存在...');
+      console.log('🔍 检查数据库架构完整性...');
 
-      // 检查关键表是否存在
-      const tables = ['users', 'plans', 'plan_categories', 'system_config'];
-      
-      for (const tableName of tables) {
+      // 1. 检查关键表是否存在
+      const requiredTables = ['users', 'plans', 'plan_categories', 'system_config'];
+
+      for (const tableName of requiredTables) {
         const result = await sql`
           SELECT table_name FROM information_schema.tables
           WHERE table_schema = 'public' AND table_name = ${tableName}
         `;
-        
+
         if (result.rows.length === 0) {
           console.log(`❌ 关键表 '${tableName}' 不存在，需要初始化数据库`);
           return true;
@@ -126,19 +126,65 @@ export class VercelPostgresAdapter implements DatabaseAdapter {
         }
       }
 
-      console.log('✅ 所有关键表都存在，数据库已初始化');
+      // 2. 检查关键约束是否存在（这是造成重复初始化的主要原因）
+      console.log('🔍 检查关键约束是否存在...');
+      const constraintResult = await sql`
+        SELECT constraint_name FROM information_schema.table_constraints
+        WHERE table_schema = 'public'
+        AND constraint_name = 'fk_users_current_plan'
+        AND constraint_type = 'FOREIGN KEY'
+      `;
+
+      if (constraintResult.rows.length === 0) {
+        console.log('❌ 关键外键约束 fk_users_current_plan 不存在，需要初始化数据库');
+        return true;
+      } else {
+        console.log('✅ 关键外键约束存在');
+      }
+
+      // 3. 检查关键索引是否存在
+      console.log('🔍 检查关键索引是否存在...');
+      const indexResult = await sql`
+        SELECT indexname FROM pg_indexes
+        WHERE schemaname = 'public'
+        AND indexname = 'idx_users_email'
+      `;
+
+      if (indexResult.rows.length === 0) {
+        console.log('❌ 关键索引 idx_users_email 不存在，需要初始化数据库');
+        return true;
+      } else {
+        console.log('✅ 关键索引存在');
+      }
+
+      // 4. 检查是否有基础数据
+      console.log('🔍 检查基础配置数据...');
+      const configResult = await sql`
+        SELECT COUNT(*) as count FROM system_config WHERE category = 'site'
+      `;
+
+      if (parseInt(configResult.rows[0]?.count || '0') === 0) {
+        console.log('❌ 基础配置数据缺失，需要初始化数据库');
+        return true;
+      } else {
+        console.log('✅ 基础配置数据存在');
+      }
+
+      console.log('🎉 数据库架构完整，跳过初始化');
       return false;
+
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error('❌ 检查 PostgreSQL 数据库状态失败:', errorMessage);
-      
+
       if (error instanceof Error && 'code' in error) {
         console.error('错误详情:', {
           code: (error as any).code,
-          message: errorMessage
+          message: errorMessage,
+          detail: (error as any).detail
         });
       }
-      
+
       console.log('⚠️ 由于检查失败，假设需要初始化数据库');
       return true; // 出错时假设需要初始化
     }
@@ -276,6 +322,13 @@ export class VercelPostgresAdapter implements DatabaseAdapter {
           console.log(`✅ 语句执行成功`);
         } catch (error) {
           const enhancedError = this.enhanceError(error, 'SCHEMA_EXECUTE', trimmedStatement);
+
+          // 检查是否为可忽略的架构错误（如重复创建）
+          if (this.isIgnorableSchemaError(error)) {
+            console.log(`🔄 跳过已存在的架构元素（正常行为）: ${trimmedStatement.substring(0, 80)}...`);
+            continue;
+          }
+
           console.error(`❌ 执行架构语句失败:`);
           console.error(`   语句: ${trimmedStatement.substring(0, 200)}...`);
           console.error(`   错误: ${enhancedError.message}`);
@@ -478,6 +531,9 @@ export class VercelPostgresAdapter implements DatabaseAdapter {
       case '42P07': // relation already exists
         suggestion = '表已存在，这通常是正常的，可能是重复初始化';
         break;
+      case '42710': // constraint already exists
+        suggestion = '约束已存在，这通常是正常的，可能是重复创建外键或约束';
+        break;
       case '23505': // unique violation
         suggestion = '唯一性约束冲突，数据可能已存在';
         break;
@@ -525,6 +581,33 @@ export class VercelPostgresAdapter implements DatabaseAdapter {
 
     return ignorableCodes.includes(errorCode) ||
            ignorableMessages.some(msg => errorMessage.toLowerCase().includes(msg.toLowerCase()));
+  }
+
+  /**
+   * 检查是否为可忽略的架构错误（通常是重复创建表、索引、约束等）
+   */
+  private isIgnorableSchemaError(error: any): boolean {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorCode = error?.code;
+
+    // PostgreSQL 架构相关的可忽略错误码
+    const ignorableSchemaErrors = [
+      '42P07', // relation already exists (table, index)
+      '42710', // constraint already exists
+      '42P06', // schema already exists
+      '42723', // role already exists
+    ];
+
+    const ignorableSchemaMessages = [
+      'already exists',
+      'relation already exists',
+      'constraint already exists',
+      'index already exists',
+      'duplicate object'
+    ];
+
+    return ignorableSchemaErrors.includes(errorCode) ||
+           ignorableSchemaMessages.some(msg => errorMessage.toLowerCase().includes(msg.toLowerCase()));
   }
 
   /**
