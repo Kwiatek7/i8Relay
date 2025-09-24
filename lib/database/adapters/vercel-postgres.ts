@@ -246,8 +246,9 @@ export class VercelPostgresAdapter implements DatabaseAdapter {
           await sql.query(trimmedStatement);
         } catch (error) {
           // 对于种子数据，可能存在重复插入的情况，适当忽略某些错误
-          if (!error.message.includes('duplicate key') && 
-              !error.message.includes('already exists')) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          if (!errorMessage.includes('duplicate key') &&
+              !errorMessage.includes('already exists')) {
             console.error(`执行种子数据语句失败: ${trimmedStatement.substring(0, 100)}...`);
             throw error;
           } else {

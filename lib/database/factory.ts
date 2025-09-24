@@ -68,6 +68,9 @@ export class DatabaseFactory {
       if (isMySQLAvailable()) {
         console.log('🎯 环境变量指定使用 MySQL 数据库');
         const mysqlConfig = parseMySQLConfig();
+        if (!mysqlConfig) {
+          throw new Error('MySQL 配置解析失败');
+        }
         return new MySQLAdapter(mysqlConfig);
       } else {
         throw new Error('环境变量指定使用 MySQL，但未找到相关配置');
@@ -98,6 +101,9 @@ export class DatabaseFactory {
     if (isMySQLAvailable()) {
       console.log('🐬 检测到 MySQL 环境，使用 MySQL 数据库');
       const mysqlConfig = parseMySQLConfig();
+      if (!mysqlConfig) {
+        throw new Error('MySQL 环境检测成功但配置解析失败');
+      }
       return new MySQLAdapter(mysqlConfig);
     }
 
