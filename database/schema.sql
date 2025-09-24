@@ -95,6 +95,7 @@ CREATE TABLE IF NOT EXISTS plans (
 
   -- 功能特性
   features TEXT NOT NULL, -- JSON数组，功能列表
+  billing_period TEXT DEFAULT 'monthly' CHECK (billing_period IN ('monthly', 'yearly', 'one_time')),
   priority_support BOOLEAN DEFAULT false,
   is_popular BOOLEAN DEFAULT false,
   is_active BOOLEAN DEFAULT true,
