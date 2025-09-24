@@ -79,7 +79,8 @@ export class MySQLAdapter implements DatabaseAdapter {
     try {
       // 转换 SQLite 语法为 MySQL 语法
       const mysqlQuery = this.convertSQLiteToMySQL(sql);
-      const [rows] = await this.connection.execute(mysqlQuery, params ? Object.values(params) : []);
+      const processedParams = params ? this.preprocessParams(Object.values(params)) : [];
+      const [rows] = await this.connection.execute(mysqlQuery, processedParams);
 
       // MySQL 返回数组，取第一个结果
       if (Array.isArray(rows) && rows.length > 0) {
@@ -98,7 +99,8 @@ export class MySQLAdapter implements DatabaseAdapter {
 
     try {
       const mysqlQuery = this.convertSQLiteToMySQL(sql);
-      const [rows] = await this.connection.execute(mysqlQuery, params ? Object.values(params) : []);
+      const processedParams = params ? this.preprocessParams(Object.values(params)) : [];
+      const [rows] = await this.connection.execute(mysqlQuery, processedParams);
       return Array.isArray(rows) ? rows as any[] : [];
     } catch (error) {
       console.error('MySQL 查询失败:', error);
@@ -112,7 +114,8 @@ export class MySQLAdapter implements DatabaseAdapter {
 
     try {
       const mysqlQuery = this.convertSQLiteToMySQL(sql);
-      const [result] = await this.connection.execute(mysqlQuery, params ? Object.values(params) : []);
+      const processedParams = params ? this.preprocessParams(Object.values(params)) : [];
+      const [result] = await this.connection.execute(mysqlQuery, processedParams);
 
       // MySQL 执行结果
       const mysqlResult = result as mysql.ResultSetHeader;
@@ -401,6 +404,34 @@ export class MySQLAdapter implements DatabaseAdapter {
         indexes: 0
       };
     }
+  }
+
+  /**
+   * 预处理参数，将JavaScript类型转换为MySQL兼容格式
+   */
+  private preprocessParams(params: any[]): any[] {
+    return params.map(param => {
+      // 处理日期时间：将ISO 8601格式转换为MySQL DATETIME格式
+      if (param instanceof Date) {
+        return param.toISOString().slice(0, 19).replace('T', ' ');
+      }
+
+      // 处理ISO字符串格式的日期
+      if (typeof param === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?$/.test(param)) {
+        const date = new Date(param);
+        if (!isNaN(date.getTime())) {
+          return date.toISOString().slice(0, 19).replace('T', ' ');
+        }
+      }
+
+      // 处理布尔值：MySQL使用1/0
+      if (typeof param === 'boolean') {
+        return param ? 1 : 0;
+      }
+
+      // 其他类型直接返回
+      return param;
+    });
   }
 
   // SQLite 语法转换为 MySQL 语法
