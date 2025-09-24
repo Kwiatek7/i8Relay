@@ -152,6 +152,19 @@ export class AuthService {
       email: string;
     }>('/user/email-verification-status');
   }
+
+  // 获取邮箱验证配置（公开接口）
+  async getEmailVerificationConfig(): Promise<ApiResponse<{
+    enable_email_verification: boolean;
+    require_verification_for_registration: boolean;
+    block_unverified_users: boolean;
+  }>> {
+    return this.request<{
+      enable_email_verification: boolean;
+      require_verification_for_registration: boolean;
+      block_unverified_users: boolean;
+    }>('/config/email-verification');
+  }
 }
 
 // 导出认证服务实例

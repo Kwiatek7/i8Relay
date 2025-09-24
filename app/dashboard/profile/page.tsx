@@ -41,6 +41,7 @@ export default function ProfilePage() {
     email?: string;
   }>({ isVerified: false });
   const [showEmailVerificationDialog, setShowEmailVerificationDialog] = useState(false);
+  const [emailVerificationEnabled, setEmailVerificationEnabled] = useState(false);
 
   // 获取API密钥数据
   const {
@@ -73,21 +74,30 @@ export default function ProfilePage() {
     }
   }, [user]);
 
-  // 获取邮箱验证状态
+  // 获取邮箱验证配置和状态
   useEffect(() => {
-    const fetchEmailVerificationStatus = async () => {
+    const fetchEmailVerificationData = async () => {
       try {
-        const result = await authService.getEmailVerificationStatus();
-        if (result.success && result.data) {
-          setEmailVerificationStatus(result.data);
+        // 首先获取邮箱验证是否启用
+        const configResult = await authService.getEmailVerificationConfig();
+        if (configResult.success && configResult.data) {
+          setEmailVerificationEnabled(configResult.data.enable_email_verification);
+
+          // 只有启用了邮箱验证功能，才获取验证状态
+          if (configResult.data.enable_email_verification) {
+            const statusResult = await authService.getEmailVerificationStatus();
+            if (statusResult.success && statusResult.data) {
+              setEmailVerificationStatus(statusResult.data);
+            }
+          }
         }
       } catch (error) {
-        console.error('获取邮箱验证状态失败:', error);
+        console.error('获取邮箱验证数据失败:', error);
       }
     };
 
     if (user) {
-      fetchEmailVerificationStatus();
+      fetchEmailVerificationData();
     }
   }, [user]);
 
@@ -373,28 +383,30 @@ export default function ProfilePage() {
               <h2 className="text-2xl font-bold text-gray-800 dark:text-white">{profileForm.nickname}</h2>
               <p className="text-gray-600 dark:text-gray-400 mt-1">{profileForm.email}</p>
               <div className="mt-3 flex items-center gap-4">
-                {emailVerificationStatus.isVerified ? (
-                  <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                    <CheckCircle className="w-4 h-4 mr-1" />
-                    邮箱已验证
-                  </Badge>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <Badge 
-                      variant="secondary" 
-                      className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 cursor-pointer hover:bg-yellow-200 dark:hover:bg-yellow-900/50"
-                      onClick={handleEmailVerification}
-                    >
-                      <AlertTriangle className="w-4 h-4 mr-1" />
-                      邮箱未验证
+                {emailVerificationEnabled && (
+                  emailVerificationStatus.isVerified ? (
+                    <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                      <CheckCircle className="w-4 h-4 mr-1" />
+                      邮箱已验证
                     </Badge>
-                    <button
-                      onClick={handleEmailVerification}
-                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                    >
-                      立即验证
-                    </button>
-                  </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant="secondary"
+                        className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 cursor-pointer hover:bg-yellow-200 dark:hover:bg-yellow-900/50"
+                        onClick={handleEmailVerification}
+                      >
+                        <AlertTriangle className="w-4 h-4 mr-1" />
+                        邮箱未验证
+                      </Badge>
+                      <button
+                        onClick={handleEmailVerification}
+                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        立即验证
+                      </button>
+                    </div>
+                  )
                 )}
               </div>
             </div>
@@ -607,13 +619,15 @@ export default function ProfilePage() {
       </div>
 
       {/* 邮箱验证对话框 */}
-      <EmailVerificationDialog
-        isOpen={showEmailVerificationDialog}
-        onClose={() => setShowEmailVerificationDialog(false)}
-        userEmail={profileForm.email}
-        onVerificationSent={handleVerificationSent}
-        onVerificationComplete={handleVerificationComplete}
-      />
+      {emailVerificationEnabled && (
+        <EmailVerificationDialog
+          isOpen={showEmailVerificationDialog}
+          onClose={() => setShowEmailVerificationDialog(false)}
+          userEmail={profileForm.email}
+          onVerificationSent={handleVerificationSent}
+          onVerificationComplete={handleVerificationComplete}
+        />
+      )}
     </DashboardLayout>
   );
 }

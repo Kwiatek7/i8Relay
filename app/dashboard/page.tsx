@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUsageStats, useUserSubscription, useTemporaryQuota } from '../../lib/hooks/use-api';
 import { useAuth } from '../../lib/auth-context';
@@ -25,7 +25,8 @@ import {
   Activity
 } from 'lucide-react';
 
-export default function DashboardPage() {
+// 处理搜索参数的内部组件
+function DashboardWithSearchParams() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
@@ -766,5 +767,30 @@ export default function DashboardPage() {
         />
       </div>
     </DashboardLayout>
+  );
+}
+
+// 使用Suspense包装的主组件
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="container mx-auto px-4 py-8">
+          <div className="animate-pulse space-y-6">
+            <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
+            <div className="grid grid-cols-1 xl:grid-cols-5 gap-4">
+              <div className="xl:col-span-3 h-96 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
+              <div className="xl:col-span-2 h-96 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="h-80 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
+              <div className="h-80 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }>
+      <DashboardWithSearchParams />
+    </Suspense>
   );
 }
