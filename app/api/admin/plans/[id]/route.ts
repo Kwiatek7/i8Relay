@@ -102,8 +102,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return createErrorResponse(new Error(`更新套餐失败: ${updateError.message}`), 500);
     }
 
-    return createAuthResponse(updatedPlan, '套餐更新成功');
-
   } catch (error) {
     console.error('更新套餐错误:', error);
 
