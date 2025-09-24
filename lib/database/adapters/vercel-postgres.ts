@@ -332,14 +332,104 @@ export class VercelPostgresAdapter implements DatabaseAdapter {
   }
 
   /**
-   * 分割SQL语句
+   * 智能分割SQL语句，正确处理多行语句和嵌套结构
    */
   private splitSQLStatements(sql: string): string[] {
-    // 移除注释并分割语句
-    return sql
-      .split(';')
-      .map(statement => statement.trim())
-      .filter(statement => statement.length > 0 && !this.isCommentOrEmpty(statement));
+    const statements: string[] = [];
+    let currentStatement = '';
+    let inSingleQuote = false;
+    let inDoubleQuote = false;
+    let inComment = false;
+    let inMultiLineComment = false;
+    let parenthesesDepth = 0;
+
+    const lines = sql.split('\n');
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+
+      // 跳过纯注释行
+      const trimmedLine = line.trim();
+      if (trimmedLine.startsWith('--') || trimmedLine === '') {
+        continue;
+      }
+
+      // 处理多行注释
+      if (trimmedLine.startsWith('/*')) {
+        inMultiLineComment = true;
+        continue;
+      }
+      if (inMultiLineComment) {
+        if (trimmedLine.endsWith('*/')) {
+          inMultiLineComment = false;
+        }
+        continue;
+      }
+
+      // 逐字符分析
+      for (let j = 0; j < line.length; j++) {
+        const char = line[j];
+        const nextChar = line[j + 1];
+
+        // 处理注释
+        if (!inSingleQuote && !inDoubleQuote && char === '-' && nextChar === '-') {
+          break; // 跳过行的其余部分
+        }
+
+        // 处理引号
+        if (char === "'" && !inDoubleQuote) {
+          inSingleQuote = !inSingleQuote;
+        } else if (char === '"' && !inSingleQuote) {
+          inDoubleQuote = !inDoubleQuote;
+        }
+
+        // 如果在引号内，直接添加字符
+        if (inSingleQuote || inDoubleQuote) {
+          currentStatement += char;
+          continue;
+        }
+
+        // 处理括号
+        if (char === '(') {
+          parenthesesDepth++;
+        } else if (char === ')') {
+          parenthesesDepth--;
+        }
+
+        // 处理分号
+        if (char === ';' && parenthesesDepth === 0) {
+          // 语句结束
+          currentStatement += char;
+          const statement = currentStatement.trim();
+          if (statement && !this.isCommentOrEmpty(statement)) {
+            statements.push(statement);
+          }
+          currentStatement = '';
+          continue;
+        }
+
+        currentStatement += char;
+      }
+
+      // 添加换行符（除非在引号内）
+      if (!inSingleQuote && !inDoubleQuote) {
+        currentStatement += '\n';
+      }
+    }
+
+    // 处理最后一个语句（如果没有以分号结尾）
+    if (currentStatement.trim() && !this.isCommentOrEmpty(currentStatement.trim())) {
+      statements.push(currentStatement.trim());
+    }
+
+    // 过滤并清理语句
+    return statements
+      .map(stmt => stmt.trim())
+      .filter(stmt => stmt.length > 0 && !this.isCommentOrEmpty(stmt))
+      .map(stmt => {
+        // 移除多余的空白字符，但保留必要的空格
+        return stmt.replace(/\s+/g, ' ').trim();
+      });
   }
 
   /**
