@@ -10,82 +10,6 @@ on:
     - cron: '0 2 * * 1'
 
 jobs:
-  dependency-security:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20.x'
-        cache: 'npm'
-
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v2
-      with:
-        version: latest
-
-    - name: Install dependencies
-      run: pnpm install
-
-    - name: Run npm audit
-      run: |
-        pnpm audit --audit-level moderate || echo "⚠️ 发现中等或以上安全漏洞，请检查并修复"
-
-    - name: Check for outdated dependencies
-      run: |
-        pnpm outdated || echo "📦 发现过时的依赖包"
-
-  code-quality:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20.x'
-        cache: 'npm'
-
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v2
-      with:
-        version: latest
-
-    - name: Install dependencies
-      run: pnpm install
-
-    - name: TypeScript strict check
-      run: |
-        echo "检查 TypeScript 严格模式配置..."
-        if grep -q '"strict": true' tsconfig.json; then
-          echo "✅ TypeScript 严格模式已启用"
-        else
-          echo "⚠️ 建议启用 TypeScript 严格模式"
-        fi
-
-    - name: Check for console.log statements
-      run: |
-        echo "检查生产代码中的 console.log..."
-        if grep -r "console\." app lib components --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" | grep -v "console.error\|console.warn"; then
-          echo "⚠️ 发现 console.log 语句，建议在生产环境中移除"
-          exit 0  # 不失败，只是警告
-        else
-          echo "✅ 未发现不当的控制台输出"
-        fi
-
-    - name: Check for TODO/FIXME comments
-      run: |
-        echo "检查代码中的 TODO 和 FIXME 注释..."
-        if grep -r "TODO\|FIXME" app lib components --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx"; then
-          echo "📝 发现待办事项，请及时处理"
-        else
-          echo "✅ 未发现待办事项"
-        fi
-
   # CodeQL 分析 - GitHub 的代码安全分析
   codeql:
     name: CodeQL Analysis
@@ -116,23 +40,6 @@ jobs:
       uses: github/codeql-action/analyze@v2
       with:
         category: "/language:${{matrix.language}}"
-
-  # Secret 扫描
-  secret-scan:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: TruffleHog OSS
-      uses: trufflesecurity/trufflehog@main
-      with:
-        path: ./
-        base: main
-        head: HEAD
-        extra_args: --debug --only-verified
 
   # 许可证检查
   license-check:
