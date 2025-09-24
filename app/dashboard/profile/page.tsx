@@ -6,6 +6,7 @@ import { useAuth } from '../../../lib/auth-context';
 import { useApiKeys } from '../../../lib/hooks/use-api';
 import { authService } from '../../../lib/auth/service';
 import { useToast } from '@/components/ui/toast';
+import { EmailVerificationDialog } from '@/components/email-verification-dialog';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,7 +21,8 @@ import {
   EyeOff,
   Copy,
   RefreshCw,
-  AlertTriangle
+  AlertTriangle,
+  CheckCircle
 } from 'lucide-react';
 
 export default function ProfilePage() {
@@ -31,6 +33,14 @@ export default function ProfilePage() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showRegenerateAlert, setShowRegenerateAlert] = useState(false);
+  
+  // 邮箱验证相关状态
+  const [emailVerificationStatus, setEmailVerificationStatus] = useState<{
+    isVerified: boolean;
+    verifiedAt?: string;
+    email?: string;
+  }>({ isVerified: false });
+  const [showEmailVerificationDialog, setShowEmailVerificationDialog] = useState(false);
 
   // 获取API密钥数据
   const {
@@ -60,6 +70,24 @@ export default function ProfilePage() {
         email: user.email,
         nickname: user.username
       });
+    }
+  }, [user]);
+
+  // 获取邮箱验证状态
+  useEffect(() => {
+    const fetchEmailVerificationStatus = async () => {
+      try {
+        const result = await authService.getEmailVerificationStatus();
+        if (result.success && result.data) {
+          setEmailVerificationStatus(result.data);
+        }
+      } catch (error) {
+        console.error('获取邮箱验证状态失败:', error);
+      }
+    };
+
+    if (user) {
+      fetchEmailVerificationStatus();
     }
   }, [user]);
 
@@ -240,6 +268,42 @@ export default function ProfilePage() {
     }
   };
 
+  // 处理邮箱验证
+  const handleEmailVerification = () => {
+    setShowEmailVerificationDialog(true);
+  };
+
+  // 验证邮件发送成功回调
+  const handleVerificationSent = () => {
+    toast({
+      type: 'info',
+      title: '验证邮件已发送',
+      description: '请查收邮箱并点击验证链接'
+    });
+  };
+
+  // 验证完成回调
+  const handleVerificationComplete = () => {
+    // 重新获取验证状态
+    const fetchEmailVerificationStatus = async () => {
+      try {
+        const result = await authService.getEmailVerificationStatus();
+        if (result.success && result.data) {
+          setEmailVerificationStatus(result.data);
+        }
+      } catch (error) {
+        console.error('获取邮箱验证状态失败:', error);
+      }
+    };
+    fetchEmailVerificationStatus();
+    
+    toast({
+      type: 'success',
+      title: '验证成功',
+      description: '邮箱验证已完成'
+    });
+  };
+
   const copyApiKey = async () => {
     if (!primaryApiKey?.key) {
       toast({
@@ -309,10 +373,29 @@ export default function ProfilePage() {
               <h2 className="text-2xl font-bold text-gray-800 dark:text-white">{profileForm.nickname}</h2>
               <p className="text-gray-600 dark:text-gray-400 mt-1">{profileForm.email}</p>
               <div className="mt-3 flex items-center gap-4">
-                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
-                  <AlertTriangle className="w-4 h-4 mr-1" />
-                  邮箱未验证
-                </Badge>
+                {emailVerificationStatus.isVerified ? (
+                  <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                    <CheckCircle className="w-4 h-4 mr-1" />
+                    邮箱已验证
+                  </Badge>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Badge 
+                      variant="secondary" 
+                      className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 cursor-pointer hover:bg-yellow-200 dark:hover:bg-yellow-900/50"
+                      onClick={handleEmailVerification}
+                    >
+                      <AlertTriangle className="w-4 h-4 mr-1" />
+                      邮箱未验证
+                    </Badge>
+                    <button
+                      onClick={handleEmailVerification}
+                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      立即验证
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
             <div className="bg-gray-50 dark:bg-gray-700 rounded-xl px-4 py-3 text-right hidden md:block">
@@ -522,6 +605,15 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* 邮箱验证对话框 */}
+      <EmailVerificationDialog
+        isOpen={showEmailVerificationDialog}
+        onClose={() => setShowEmailVerificationDialog(false)}
+        userEmail={profileForm.email}
+        onVerificationSent={handleVerificationSent}
+        onVerificationComplete={handleVerificationComplete}
+      />
     </DashboardLayout>
   );
 }

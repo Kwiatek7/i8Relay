@@ -27,6 +27,14 @@ interface SiteConfig {
   smtp_secure: boolean;
   contact_form_email: string;
 
+  // 邮箱验证配置
+  enable_email_verification: boolean;
+  require_verification_for_registration: boolean;
+  verification_token_expires_hours: number;
+  max_verification_attempts: number;
+  resend_cooldown_minutes: number;
+  verification_email_subject: string;
+  block_unverified_users: boolean;
 }
 
 export default function AdminConfig() {
@@ -359,6 +367,140 @@ export default function AdminConfig() {
                     开放用户注册
                   </label>
                 </div>
+              </div>
+            </div>
+
+            {/* 邮箱验证配置 */}
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">邮箱验证设置</h3>
+              <div className="space-y-4">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="enable_email_verification"
+                    checked={config.enable_email_verification}
+                    onChange={(e) => handleChange('enable_email_verification', e.target.checked)}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <label htmlFor="enable_email_verification" className="ml-2 text-sm font-medium text-gray-700">
+                    启用邮箱验证功能
+                  </label>
+                </div>
+
+                {config.enable_email_verification && (
+                  <>
+                    <div className="ml-6 space-y-4">
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="require_verification_for_registration"
+                          checked={config.require_verification_for_registration}
+                          onChange={(e) => handleChange('require_verification_for_registration', e.target.checked)}
+                          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                        <label htmlFor="require_verification_for_registration" className="ml-2 text-sm font-medium text-gray-700">
+                          注册时强制邮箱验证
+                        </label>
+                      </div>
+
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="block_unverified_users"
+                          checked={config.block_unverified_users}
+                          onChange={(e) => handleChange('block_unverified_users', e.target.checked)}
+                          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                        <label htmlFor="block_unverified_users" className="ml-2 text-sm font-medium text-gray-700">
+                          阻止未验证用户使用服务
+                        </label>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            验证链接有效期（小时）
+                          </label>
+                          <input
+                            type="number"
+                            min={1}
+                            max={168}
+                            value={config.verification_token_expires_hours}
+                            onChange={(e) => handleChange('verification_token_expires_hours', parseInt(e.target.value))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="24"
+                          />
+                          <p className="mt-1 text-xs text-gray-500">1-168小时</p>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            最大验证尝试次数
+                          </label>
+                          <input
+                            type="number"
+                            min={1}
+                            max={10}
+                            value={config.max_verification_attempts}
+                            onChange={(e) => handleChange('max_verification_attempts', parseInt(e.target.value))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="3"
+                          />
+                          <p className="mt-1 text-xs text-gray-500">1-10次</p>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            重发冷却时间（分钟）
+                          </label>
+                          <input
+                            type="number"
+                            min={1}
+                            max={60}
+                            value={config.resend_cooldown_minutes}
+                            onChange={(e) => handleChange('resend_cooldown_minutes', parseInt(e.target.value))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="5"
+                          />
+                          <p className="mt-1 text-xs text-gray-500">1-60分钟</p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          验证邮件主题
+                        </label>
+                        <input
+                          type="text"
+                          value={config.verification_email_subject}
+                          onChange={(e) => handleChange('verification_email_subject', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="请验证您的邮箱地址"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
+                      <div className="flex">
+                        <div className="flex-shrink-0">
+                          <svg className="h-5 w-5 text-amber-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <div className="ml-3">
+                          <h4 className="text-sm font-medium text-amber-800">使用提醒</h4>
+                          <div className="mt-2 text-sm text-amber-700">
+                            <ul className="list-disc pl-5 space-y-1">
+                              <li>邮箱验证功能需要先配置并启用SMTP邮件服务</li>
+                              <li>强制验证模式下，未验证用户无法完成注册流程</li>
+                              <li>阻止未验证用户功能会限制其使用核心服务</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 

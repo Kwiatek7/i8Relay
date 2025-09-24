@@ -1,9 +1,12 @@
 "use client";
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useUsageStats, useUserSubscription, useTemporaryQuota } from '../../lib/hooks/use-api';
+import { useAuth } from '../../lib/auth-context';
+import { authService } from '../../lib/auth/service';
 import { useToast } from '@/components/ui/toast';
+import { EmailVerificationDialog } from '@/components/email-verification-dialog';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,7 +27,17 @@ import {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { user } = useAuth();
   const { toast } = useToast();
+
+  // 邮箱验证相关状态
+  const [showEmailVerificationDialog, setShowEmailVerificationDialog] = useState(false);
+  const [emailVerificationStatus, setEmailVerificationStatus] = useState<{
+    isVerified: boolean;
+    verifiedAt?: string;
+    email?: string;
+  }>({ isVerified: false });
 
   // 获取使用统计数据
   const {
@@ -52,6 +65,36 @@ export default function DashboardPage() {
 
   // Token使用分布时间范围状态
   const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month'>('today');
+
+  // 检查URL参数，显示邮箱验证对话框
+  useEffect(() => {
+    const showEmailVerification = searchParams.get('show_email_verification');
+    if (showEmailVerification === 'true') {
+      setShowEmailVerificationDialog(true);
+      // 清理URL参数
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('show_email_verification');
+      window.history.replaceState({}, '', newUrl.toString());
+    }
+  }, [searchParams]);
+
+  // 获取邮箱验证状态
+  useEffect(() => {
+    const fetchEmailVerificationStatus = async () => {
+      try {
+        const result = await authService.getEmailVerificationStatus();
+        if (result.success && result.data) {
+          setEmailVerificationStatus(result.data);
+        }
+      } catch (error) {
+        console.error('获取邮箱验证状态失败:', error);
+      }
+    };
+
+    if (user) {
+      fetchEmailVerificationStatus();
+    }
+  }, [user]);
 
   // 处理临时提额
   const handleTemporaryQuotaIncrease = async () => {
@@ -85,6 +128,37 @@ export default function DashboardPage() {
         duration: 5000
       });
     }
+  };
+
+  // 验证邮件发送成功回调
+  const handleVerificationSent = () => {
+    toast({
+      type: 'info',
+      title: '验证邮件已发送',
+      description: '请查收邮箱并点击验证链接'
+    });
+  };
+
+  // 验证完成回调
+  const handleVerificationComplete = () => {
+    // 重新获取验证状态
+    const fetchEmailVerificationStatus = async () => {
+      try {
+        const result = await authService.getEmailVerificationStatus();
+        if (result.success && result.data) {
+          setEmailVerificationStatus(result.data);
+        }
+      } catch (error) {
+        console.error('获取邮箱验证状态失败:', error);
+      }
+    };
+    fetchEmailVerificationStatus();
+    
+    toast({
+      type: 'success',
+      title: '验证成功',
+      description: '邮箱验证已完成'
+    });
   };
 
   // 处理加载状态
@@ -681,6 +755,15 @@ export default function DashboardPage() {
             </Table>
           </div>
         </Card>
+
+        {/* 邮箱验证对话框 */}
+        <EmailVerificationDialog
+          isOpen={showEmailVerificationDialog}
+          onClose={() => setShowEmailVerificationDialog(false)}
+          userEmail={user?.email || ''}
+          onVerificationSent={handleVerificationSent}
+          onVerificationComplete={handleVerificationComplete}
+        />
       </div>
     </DashboardLayout>
   );

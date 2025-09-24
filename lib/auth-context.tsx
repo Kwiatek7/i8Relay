@@ -9,7 +9,7 @@ interface AuthContextType {
   loading: boolean;
   error: string | null;
   login: (credentials: LoginRequest) => Promise<{ success: boolean; error?: string }>;
-  register: (data: RegisterRequest) => Promise<{ success: boolean; error?: string }>;
+  register: (data: RegisterRequest) => Promise<{ success: boolean; data?: any; error?: string }>;
   logout: () => void;
   updateProfile: (data: Partial<User>) => Promise<{ success: boolean; error?: string }>;
   clearError: () => void;
@@ -87,7 +87,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (response.success && response.data) {
         setUser(response.data.user);
-        return { success: true };
+        // 返回完整的响应数据，包括邮箱验证信息
+        return {
+          success: true,
+          data: response.data
+        };
       } else {
         const errorMessage = response.error?.message || '注册失败';
         setError(errorMessage);

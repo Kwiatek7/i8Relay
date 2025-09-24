@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { userModel, sessionModel, configModel } from '../../../../lib/database/models';
+import { getDb } from '../../../../lib/database/connection';
 import { jwtManager } from '../../../../lib/auth/jwt';
 import { createAuthResponse, createErrorResponse, AuthError } from '../../../../lib/auth/middleware';
+import { emailVerificationService } from '../../../../lib/email-verification';
 import type { RegisterRequest } from '../../../../lib/types';
 
 // 获取客户端信息
@@ -63,14 +65,62 @@ export async function POST(request: NextRequest) {
       throw new AuthError('该邮箱已被注册', 'email_exists', 400);
     }
 
-    // 创建用户
+    // 检查邮箱验证配置
+    const emailVerificationConfig = await configModel.getEmailVerificationConfig();
+    const requireEmailVerification = emailVerificationConfig.enable_email_verification && 
+                                    emailVerificationConfig.require_verification_for_registration;
+
+    // 先创建用户（使用默认状态）
     const user = await userModel.create({
       username: body.username.trim(),
       email: body.email.trim().toLowerCase(),
       password: body.password,
       phone: body.phone?.trim() || undefined,
-      company: body.company?.trim() || undefined
+      company: body.company?.trim() || undefined,
     });
+
+    // 获取数据库连接用于直接SQL操作
+    const db = await getDb();
+
+    // 根据是否需要邮箱验证，设置用户状态和验证状态
+    if (requireEmailVerification) {
+      await userModel.update(user.id, {
+        status: 'pending'
+      });
+      // 设置邮箱为未验证
+      await db.run(
+        'UPDATE users SET email_verified = false WHERE id = ?',
+        [user.id]
+      );
+    } else {
+      // 不需要验证则直接标记为已验证
+      await userModel.update(user.id, {
+        status: 'active'
+      });
+      // 设置邮箱为已验证
+      await db.run(
+        'UPDATE users SET email_verified = true, email_verified_at = ? WHERE id = ?',
+        [new Date().toISOString(), user.id]
+      );
+    }
+
+    // 如果需要邮箱验证，发送验证邮件
+    if (requireEmailVerification) {
+      const clientInfo = getClientInfo(request);
+      const emailResult = await emailVerificationService.sendVerificationEmail(
+        user.id,
+        user.email,
+        user.username,
+        'email_verification',
+        clientInfo.ip_address,
+        clientInfo.user_agent
+      );
+
+      if (!emailResult.success) {
+        console.warn('发送验证邮件失败:', emailResult.error);
+        // 不阻止注册流程，只记录警告
+      }
+    }
 
     // 生成会话ID和token
     const sessionId = jwtManager.generateSessionId();
@@ -95,6 +145,11 @@ export async function POST(request: NextRequest) {
     });
 
     // 创建响应
+    let message = '注册成功';
+    if (requireEmailVerification) {
+      message = '注册成功，请查收邮箱进行验证';
+    }
+
     const response = createAuthResponse({
       user: {
         id: user.id,
@@ -109,8 +164,9 @@ export async function POST(request: NextRequest) {
       },
       token: tokenPair.accessToken,
       refresh_token: tokenPair.refreshToken,
-      expires_in: tokenPair.expiresIn
-    }, '注册成功');
+      expires_in: tokenPair.expiresIn,
+      email_verification_required: requireEmailVerification
+    }, message);
 
     // 设置httpOnly cookie
     response.cookies.set('access_token', tokenPair.accessToken, {

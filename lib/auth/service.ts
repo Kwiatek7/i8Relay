@@ -123,6 +123,35 @@ export class AuthService {
       body: JSON.stringify(data),
     });
   }
+
+  // 发送邮箱验证邮件
+  async sendEmailVerification(email?: string): Promise<ApiResponse<void>> {
+    return this.request<void>('/auth/send-verification', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  // 验证邮箱
+  async verifyEmail(token: string): Promise<ApiResponse<{ userId: string; email: string }>> {
+    return this.request<{ userId: string; email: string }>('/auth/verify-email', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+  }
+
+  // 检查邮箱验证状态
+  async getEmailVerificationStatus(): Promise<ApiResponse<{
+    isVerified: boolean;
+    verifiedAt?: string;
+    email: string;
+  }>> {
+    return this.request<{
+      isVerified: boolean;
+      verifiedAt?: string;
+      email: string;
+    }>('/user/email-verification-status');
+  }
 }
 
 // 导出认证服务实例

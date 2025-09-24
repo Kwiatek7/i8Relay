@@ -83,8 +83,16 @@ export default function RegisterPage() {
       });
 
       if (result.success) {
-        // 注册成功后跳转到管理中心
-        router.push('/dashboard');
+        // 检查是否需要邮箱验证
+        const responseData = result.data as any; // API返回的数据包含额外字段
+        if (responseData?.email_verification_required) {
+          // 显示邮箱验证提示并跳转到验证页面
+          setLocalError(''); // 清除错误
+          router.push('/dashboard?show_email_verification=true');
+        } else {
+          // 直接跳转到管理中心
+          router.push('/dashboard');
+        }
       }
       // 错误处理由auth context处理
     } catch (err) {

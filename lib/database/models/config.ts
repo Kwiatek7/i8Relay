@@ -297,6 +297,27 @@ export class ConfigModel extends BaseModel {
     return pricing;
   }
 
+  // 获取邮箱验证配置
+  async getEmailVerificationConfig(): Promise<{
+    enable_email_verification: boolean;
+    require_verification_for_registration: boolean;
+    verification_token_expires_hours: number;
+    max_verification_attempts: number;
+    resend_cooldown_minutes: number;
+    block_unverified_users: boolean;
+  }> {
+    const configs = await this.getByCategory('email_verification');
+    
+    return {
+      enable_email_verification: configs.enable_email_verification || false,
+      require_verification_for_registration: configs.require_verification_for_registration || false,
+      verification_token_expires_hours: configs.verification_token_expires_hours || 24,
+      max_verification_attempts: configs.max_verification_attempts || 3,
+      resend_cooldown_minutes: configs.resend_cooldown_minutes || 5,
+      block_unverified_users: configs.block_unverified_users || false
+    };
+  }
+
   // 解析配置值
   private parseConfigValue(value: string, dataType: string): any {
     switch (dataType) {

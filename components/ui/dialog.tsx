@@ -130,6 +130,20 @@ const DialogClose = React.forwardRef<
 ))
 DialogClose.displayName = "DialogClose"
 
+const DialogFooter = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
+  <div
+    className={cn(
+      "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 pt-4 border-t border-gray-200 dark:border-gray-700",
+      className
+    )}
+    {...props}
+  />
+)
+DialogFooter.displayName = "DialogFooter"
+
 export {
   Dialog,
   DialogTrigger,
@@ -138,4 +152,5 @@ export {
   DialogTitle,
   DialogDescription,
   DialogClose,
+  DialogFooter,
 }

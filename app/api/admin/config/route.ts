@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { authenticateRequest, createAuthResponse, createErrorResponse, AuthError } from '../../../../lib/auth/middleware';
 import { getDb } from '../../../../lib/database/connection';
+import { configModel } from '../../../../lib/database/models/config';
 
 // 默认配置值
 const DEFAULT_CONFIG = {
@@ -32,6 +33,9 @@ export async function GET(request: NextRequest) {
     // 获取站点配置
     const siteConfig = await db.get('SELECT * FROM site_config WHERE id = ?', ['default']);
 
+    // 获取邮箱验证配置
+    const emailVerificationConfig = await configModel.getEmailVerificationConfig();
+
     if (siteConfig) {
       // 从site_config表构建配置对象
       const config = {
@@ -59,12 +63,40 @@ export async function GET(request: NextRequest) {
 
         // 首页配置
         homepage_video_url: siteConfig.homepage_video_url || 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+
+        // 邮箱验证配置
+        enable_email_verification: emailVerificationConfig.enable_email_verification,
+        require_verification_for_registration: emailVerificationConfig.require_verification_for_registration,
+        verification_token_expires_hours: emailVerificationConfig.verification_token_expires_hours,
+        max_verification_attempts: emailVerificationConfig.max_verification_attempts,
+        resend_cooldown_minutes: emailVerificationConfig.resend_cooldown_minutes,
+        verification_email_subject: await configModel.get('email_verification', 'verification_email_subject') || '请验证您的邮箱地址',
+        block_unverified_users: emailVerificationConfig.block_unverified_users,
       };
 
       return createAuthResponse(config, '配置获取成功');
     } else {
       // 如果没有配置，返回默认配置
-      return createAuthResponse(DEFAULT_CONFIG, '配置获取成功');
+      const defaultConfigWithEmail = {
+        ...DEFAULT_CONFIG,
+        smtp_enabled: false,
+        smtp_host: '',
+        smtp_port: 587,
+        smtp_user: '',
+        smtp_password: '',
+        smtp_secure: false,
+        contact_form_email: '',
+        homepage_video_url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+        // 邮箱验证默认配置
+        enable_email_verification: emailVerificationConfig.enable_email_verification,
+        require_verification_for_registration: emailVerificationConfig.require_verification_for_registration,
+        verification_token_expires_hours: emailVerificationConfig.verification_token_expires_hours,
+        max_verification_attempts: emailVerificationConfig.max_verification_attempts,
+        resend_cooldown_minutes: emailVerificationConfig.resend_cooldown_minutes,
+        verification_email_subject: await configModel.get('email_verification', 'verification_email_subject') || '请验证您的邮箱地址',
+        block_unverified_users: emailVerificationConfig.block_unverified_users,
+      };
+      return createAuthResponse(defaultConfigWithEmail, '配置获取成功');
     }
 
   } catch (error) {
@@ -97,7 +129,10 @@ export async function PUT(request: NextRequest) {
       'primary_color', 'secondary_color', 'contact_email', 'company_address',
       'footer_text', 'enable_registration', 'homepage_video_url',
       // SMTP邮件配置
-      'smtp_enabled', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_password', 'smtp_secure', 'contact_form_email'
+      'smtp_enabled', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_password', 'smtp_secure', 'contact_form_email',
+      // 邮箱验证配置
+      'enable_email_verification', 'require_verification_for_registration', 'verification_token_expires_hours',
+      'max_verification_attempts', 'resend_cooldown_minutes', 'verification_email_subject', 'block_unverified_users'
     ];
     for (const key of Object.keys(configData)) {
       if (!allowedKeys.includes(key)) {
@@ -211,6 +246,30 @@ export async function PUT(request: NextRequest) {
           updated_at = ?
         WHERE category = 'site' AND key = ?
       `, [update.value, new Date().toISOString(), update.key]);
+    }
+
+    // 更新邮箱验证配置到system_config表
+    const emailVerificationUpdates = [
+      { key: 'enable_email_verification', value: configData.enable_email_verification, type: 'boolean' },
+      { key: 'require_verification_for_registration', value: configData.require_verification_for_registration, type: 'boolean' },
+      { key: 'verification_token_expires_hours', value: configData.verification_token_expires_hours, type: 'number' },
+      { key: 'max_verification_attempts', value: configData.max_verification_attempts, type: 'number' },
+      { key: 'resend_cooldown_minutes', value: configData.resend_cooldown_minutes, type: 'number' },
+      { key: 'verification_email_subject', value: configData.verification_email_subject, type: 'string' },
+      { key: 'block_unverified_users', value: configData.block_unverified_users, type: 'boolean' },
+    ];
+
+    for (const update of emailVerificationUpdates) {
+      if (update.value !== undefined) {
+        await configModel.set(
+          'email_verification',
+          update.key,
+          update.value,
+          update.type as any,
+          `邮箱验证配置 - ${update.key}`,
+          false
+        );
+      }
     }
 
     return createAuthResponse({ message: '配置更新成功' }, '配置更新成功');
