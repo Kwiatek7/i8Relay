@@ -38,8 +38,9 @@ export class VercelPostgresAdapter implements DatabaseAdapter {
       const result = await sql.query(pgQuery, params ? Object.values(params) : []);
       return result.rows[0] || null;
     } catch (error) {
-      console.error('查询失败:', error);
-      throw error;
+      const enhancedError = this.enhanceError(error, 'QUERY', sqlQuery);
+      console.error('查询失败:', enhancedError.message);
+      throw enhancedError;
     }
   }
 
@@ -51,8 +52,9 @@ export class VercelPostgresAdapter implements DatabaseAdapter {
       const result = await sql.query(pgQuery, params ? Object.values(params) : []);
       return result.rows;
     } catch (error) {
-      console.error('查询失败:', error);
-      throw error;
+      const enhancedError = this.enhanceError(error, 'QUERY', sqlQuery);
+      console.error('查询失败:', enhancedError.message);
+      throw enhancedError;
     }
   }
 
@@ -68,8 +70,9 @@ export class VercelPostgresAdapter implements DatabaseAdapter {
         changes: result.rowCount || 0
       };
     } catch (error) {
-      console.error('执行失败:', error);
-      throw error;
+      const enhancedError = this.enhanceError(error, 'EXECUTE', sqlQuery);
+      console.error('执行失败:', enhancedError.message);
+      throw enhancedError;
     }
   }
 
@@ -79,15 +82,16 @@ export class VercelPostgresAdapter implements DatabaseAdapter {
     try {
       // 将多语句SQL分割并逐一执行
       const statements = this.splitSQLStatements(sqlQuery);
-      
+
       for (const statement of statements) {
         if (statement.trim()) {
-          await sql.query(statement);
+          await this.executeWithRetry(statement, 'EXECUTE');
         }
       }
     } catch (error) {
-      console.error('执行失败:', error);
-      throw error;
+      const enhancedError = this.enhanceError(error, 'BATCH_EXECUTE', sqlQuery);
+      console.error('批量执行失败:', enhancedError.message);
+      throw enhancedError;
     }
   }
 
@@ -271,20 +275,13 @@ export class VercelPostgresAdapter implements DatabaseAdapter {
           executedCount++;
           console.log(`✅ 语句执行成功`);
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
+          const enhancedError = this.enhanceError(error, 'SCHEMA_EXECUTE', trimmedStatement);
           console.error(`❌ 执行架构语句失败:`);
           console.error(`   语句: ${trimmedStatement.substring(0, 200)}...`);
-          console.error(`   错误: ${errorMessage}`);
-          
-          if (error instanceof Error && 'code' in error) {
-            console.error('   错误详情:', {
-              code: (error as any).code,
-              detail: (error as any).detail,
-              hint: (error as any).hint
-            });
-          }
-          
-          throw new Error(`PostgreSQL 架构执行失败: ${errorMessage}`);
+          console.error(`   错误: ${enhancedError.message}`);
+          console.error(`   建议: ${enhancedError.suggestion || '检查SQL语法和表依赖关系'}`);
+
+          throw new Error(`PostgreSQL 架构执行失败: ${enhancedError.message}`);
         }
       }
     }
@@ -314,26 +311,18 @@ export class VercelPostgresAdapter implements DatabaseAdapter {
           console.log(`✅ 种子数据执行成功`);
         } catch (error) {
           // 对于种子数据，可能存在重复插入的情况，适当忽略某些错误
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          if (!errorMessage.includes('duplicate key') &&
-              !errorMessage.includes('already exists') &&
-              !errorMessage.includes('unique constraint')) {
-            console.error(`❌ 执行种子数据语句失败:`);
-            console.error(`   语句: ${trimmedStatement.substring(0, 200)}...`);
-            console.error(`   错误: ${errorMessage}`);
-            
-            if (error instanceof Error && 'code' in error) {
-              console.error('   错误详情:', {
-                code: (error as any).code,
-                detail: (error as any).detail,
-                hint: (error as any).hint
-              });
-            }
-            
-            throw new Error(`PostgreSQL 种子数据执行失败: ${errorMessage}`);
-          } else {
+          const enhancedError = this.enhanceError(error, 'SEED_EXECUTE', trimmedStatement);
+
+          if (this.isIgnorableError(error)) {
             skippedCount++;
             console.log('🔄 跳过重复数据插入（正常行为）');
+          } else {
+            console.error(`❌ 执行种子数据语句失败:`);
+            console.error(`   语句: ${trimmedStatement.substring(0, 200)}...`);
+            console.error(`   错误: ${enhancedError.message}`);
+            console.error(`   建议: ${enhancedError.suggestion || '检查数据格式和约束'}`);
+
+            throw new Error(`PostgreSQL 种子数据执行失败: ${enhancedError.message}`);
           }
         }
       }
@@ -378,6 +367,105 @@ export class VercelPostgresAdapter implements DatabaseAdapter {
       // 处理 SQLite 特有的语法
       .replace(/IF NOT EXISTS/gi, 'IF NOT EXISTS')
       .replace(/REPLACE\s+INTO/gi, 'INSERT INTO ... ON CONFLICT ... DO UPDATE SET');
+  }
+
+  /**
+   * 增强错误信息，提供更有用的调试信息和解决建议
+   */
+  private enhanceError(error: any, operation: string, sql?: string): { message: string; code?: string; suggestion?: string } {
+    const errorCode = error?.code;
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    let suggestion = '';
+
+    // PostgreSQL 常见错误码处理
+    switch (errorCode) {
+      case '42P01': // relation does not exist
+        suggestion = '表不存在，请检查表名是否正确，或确保数据库架构已正确初始化';
+        break;
+      case '42701': // duplicate column
+        suggestion = '列名重复，请检查表定义中是否有重复的列名';
+        break;
+      case '42P07': // relation already exists
+        suggestion = '表已存在，这通常是正常的，可能是重复初始化';
+        break;
+      case '23505': // unique violation
+        suggestion = '唯一性约束冲突，数据可能已存在';
+        break;
+      case '23503': // foreign key violation
+        suggestion = '外键约束违反，请检查引用的表和数据是否存在';
+        break;
+      case '42703': // undefined column
+        suggestion = '列不存在，请检查列名是否正确';
+        break;
+      case '08006': // connection failure
+        suggestion = '数据库连接失败，请检查网络连接和数据库服务状态';
+        break;
+      case '53300': // too many connections
+        suggestion = '数据库连接数过多，请稍后重试';
+        break;
+      default:
+        suggestion = '请检查SQL语法和数据库状态';
+    }
+
+    const enhancedMessage = `[${operation}] ${errorMessage}${errorCode ? ` (错误码: ${errorCode})` : ''}`;
+
+    return {
+      message: enhancedMessage,
+      code: errorCode,
+      suggestion
+    };
+  }
+
+  /**
+   * 检查是否为可忽略的错误（通常是重复数据插入）
+   */
+  private isIgnorableError(error: any): boolean {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorCode = error?.code;
+
+    // PostgreSQL 重复数据相关的错误码和消息
+    const ignorableCodes = ['23505']; // unique violation
+    const ignorableMessages = [
+      'duplicate key',
+      'already exists',
+      'unique constraint',
+      'duplicate',
+      'violates unique constraint'
+    ];
+
+    return ignorableCodes.includes(errorCode) ||
+           ignorableMessages.some(msg => errorMessage.toLowerCase().includes(msg.toLowerCase()));
+  }
+
+  /**
+   * 带重试的执行方法，用于处理临时性错误
+   */
+  private async executeWithRetry(statement: string, operation: string, maxRetries = 2): Promise<any> {
+    let lastError;
+
+    for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
+      try {
+        return await sql.query(statement);
+      } catch (error) {
+        lastError = error;
+        const errorCode = (error as any)?.code;
+
+        // 只对特定的临时性错误进行重试
+        const retryableCodes = ['53300', '08006', '08001']; // connection issues
+
+        if (attempt <= maxRetries && retryableCodes.includes(errorCode)) {
+          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // 指数退避，最大5秒
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          console.warn(`⚠️ ${operation} 失败，${delay}ms后重试 (${attempt}/${maxRetries}): ${errorMessage}`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+
+        break;
+      }
+    }
+
+    throw lastError;
   }
 
   /**

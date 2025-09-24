@@ -44,9 +44,7 @@ CREATE TABLE IF NOT EXISTS users (
   -- 时间戳
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  last_login_at TIMESTAMP,
-
-  FOREIGN KEY (current_plan_id) REFERENCES plans(id)
+  last_login_at TIMESTAMP
 );
 
 -- 用户会话表 (JWT token管理)
@@ -443,3 +441,11 @@ CREATE INDEX IF NOT EXISTS idx_system_notifications_priority ON system_notificat
 CREATE INDEX IF NOT EXISTS idx_admin_logs_admin_user_id ON admin_logs(admin_user_id);
 CREATE INDEX IF NOT EXISTS idx_admin_logs_action ON admin_logs(action);
 CREATE INDEX IF NOT EXISTS idx_admin_logs_created_at ON admin_logs(created_at);
+
+-- ============================================================================
+-- 外键约束（延迟添加以解决依赖关系）
+-- ============================================================================
+
+-- 添加 users 表的外键约束（引用 plans 表）
+ALTER TABLE users ADD CONSTRAINT fk_users_current_plan 
+  FOREIGN KEY (current_plan_id) REFERENCES plans(id);
