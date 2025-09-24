@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { UserDetailDialog } from '../../../components/ui/user-detail-dialog';
 
 interface User {
   id: string;
@@ -36,6 +37,10 @@ export default function AdminUsers() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
+  
+  // 用户详情弹窗状态
+  const [userDetailDialogOpen, setUserDetailDialogOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -154,6 +159,20 @@ export default function AdminUsers() {
       case 'pending': return '待激活';
       default: return status;
     }
+  };
+
+  // 打开用户详情弹窗
+  const handleViewUserDetail = (userId: string) => {
+    console.log('点击详情按钮，用户ID:', userId);
+    setSelectedUserId(userId);
+    setUserDetailDialogOpen(true);
+    console.log('弹窗状态已设置为 true');
+  };
+
+  // 关闭用户详情弹窗
+  const handleCloseUserDetail = () => {
+    setUserDetailDialogOpen(false);
+    setSelectedUserId(null);
   };
 
   return (
@@ -329,7 +348,7 @@ export default function AdminUsers() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
-                        onClick={() => window.open(`/admin/users/${user.id}`, '_blank')}
+                        onClick={() => handleViewUserDetail(user.id)}
                         className="text-blue-600 hover:text-blue-900 mr-2"
                       >
                         详情
@@ -372,6 +391,13 @@ export default function AdminUsers() {
           </div>
         )}
       </div>
+
+      {/* 用户详情弹窗 */}
+      <UserDetailDialog
+        isOpen={userDetailDialogOpen}
+        onClose={handleCloseUserDetail}
+        userId={selectedUserId}
+      />
     </div>
   );
 }
