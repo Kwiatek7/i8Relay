@@ -53,7 +53,10 @@ export class SQLiteAdapter implements DatabaseAdapter {
     await this.exec('PRAGMA cache_size = 1000');
     await this.exec('PRAGMA temp_store = memory');
 
-    console.log('✅ SQLite 数据库连接已建立:', this.dbPath);
+    // 只在非构建环境显示连接日志
+    if (process.env.NODE_ENV !== 'production' && !process.env.NEXT_PHASE) {
+      console.log('✅ SQLite 数据库连接已建立:', this.dbPath);
+    }
   }
 
   async get(sql: string, params?: any): Promise<any> {

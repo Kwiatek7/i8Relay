@@ -76,7 +76,10 @@ export class DatabaseFactory {
     }
 
     if (isSQLiteAvailable()) {
-      console.log('💾 使用 SQLite 数据库（本地开发环境）');
+      // 只在非构建环境显示日志
+      if (process.env.NODE_ENV !== 'production' && !process.env.NEXT_PHASE) {
+        console.log('💾 使用 SQLite 数据库（本地开发环境）');
+      }
       return new SQLiteAdapter(process.env.DATABASE_PATH);
     }
 
