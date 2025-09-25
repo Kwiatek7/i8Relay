@@ -59,7 +59,7 @@ async function getRecentActivities(limit: number) {
 
     // 获取最近的套餐购买
     const recentSubscriptions = await db.all(
-      `SELECT u.username, u.email, p.name as plan_name, us.created_at
+      `SELECT u.username, u.email, p.plan_name as plan_name, us.created_at
        FROM user_subscriptions us
        JOIN users u ON us.user_id = u.id
        LEFT JOIN plans p ON us.plan_id = p.id

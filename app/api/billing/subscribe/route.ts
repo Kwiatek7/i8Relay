@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 检查用户是否已经是此套餐
-    if (user.plan === plan.name) {
+    if (user.plan === plan.plan_name) {
       return createErrorResponse(new Error('您已经订阅了此套餐'), 400);
     }
 
@@ -107,8 +107,8 @@ export async function POST(request: NextRequest) {
       const billingId = 'bill_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
       const billingStatus = payment_method === 'balance' ? 'completed' : 'pending';
       const billingDescription = payment_method === 'balance'
-        ? `${plan.display_name || plan.name} - 余额支付`
-        : `${plan.display_name || plan.name} - ${payment_method}支付`;
+        ? `${plan.display_name || plan.plan_name} - 余额支付`
+        : `${plan.display_name || plan.plan_name} - ${payment_method}支付`;
 
       await db.run(`
         INSERT INTO billing_records (
@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
 
       responseData.plan = {
         id: plan.id,
-        name: plan.name,
+        name: plan.plan_name,
         price: plan.price,
         billing_period: plan.billing_period
       };

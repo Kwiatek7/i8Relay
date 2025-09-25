@@ -40,7 +40,6 @@ export async function GET(request: NextRequest) {
       // 从site_config表构建配置对象
       const config = {
         site_name: siteConfig.site_name || DEFAULT_CONFIG.site_name,
-        site_name_split_index: siteConfig.site_name_split_index,
         site_title: siteConfig.seo_title || DEFAULT_CONFIG.site_title,
         site_description: siteConfig.site_description || DEFAULT_CONFIG.site_description,
         site_keywords: siteConfig.seo_keywords || DEFAULT_CONFIG.site_keywords,
@@ -125,7 +124,7 @@ export async function PUT(request: NextRequest) {
 
     // 验证配置数据 - 只检查网站基本配置字段
     const allowedKeys = [
-      'site_name', 'site_name_split_index', 'site_title', 'site_description', 'site_keywords', 'site_logo',
+      'site_name', 'site_title', 'site_description', 'site_keywords', 'site_logo',
       'primary_color', 'secondary_color', 'contact_email', 'company_address',
       'footer_text', 'enable_registration', 'homepage_video_url',
       // SMTP邮件配置
@@ -148,7 +147,6 @@ export async function PUT(request: NextRequest) {
       await db.run(`
         UPDATE site_config SET
           site_name = ?,
-          site_name_split_index = ?,
           site_description = ?,
           seo_title = ?,
           seo_description = ?,
@@ -172,7 +170,6 @@ export async function PUT(request: NextRequest) {
         WHERE id = ?
       `, [
         configData.site_name || '',
-        configData.site_name_split_index || null,
         configData.site_description || '',
         configData.site_title || '',
         configData.site_description || '', // 使用描述作为SEO描述
@@ -199,15 +196,14 @@ export async function PUT(request: NextRequest) {
       // 插入新配置
       await db.run(`
         INSERT INTO site_config (
-          id, site_name, site_name_split_index, site_description, seo_title, seo_description, seo_keywords,
+          id, site_name, site_description, seo_title, seo_description, seo_keywords,
           site_logo, contact_email, contact_address, theme_primary_color, theme_secondary_color,
           enable_registration, footer_text, homepage_video_url, smtp_enabled, smtp_host, smtp_port, smtp_user, smtp_password,
           smtp_secure, contact_form_email, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         'default',
         configData.site_name || '',
-        configData.site_name_split_index || null,
         configData.site_description || '',
         configData.site_title || '',
         configData.site_description || '', // 使用描述作为SEO描述

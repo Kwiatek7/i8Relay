@@ -15,7 +15,7 @@ import { Check } from 'lucide-react';
 
 interface Plan {
   id: string;
-  name: string;
+  plan_name: string;
   price: number;
   billing_period: string;
   features: string[];
@@ -146,7 +146,7 @@ export default function PricingPage() {
                     <PlanCard
                       key={plan.id}
                       plan={plan}
-                      isCurrentPlan={isCurrentPlan(plan.name)}
+                      isCurrentPlan={isCurrentPlan(plan.plan_name)}
                       onPurchase={handlePurchase}
                       purchasing={purchasing}
                     />
@@ -238,7 +238,7 @@ function PlanCard({ plan, isCurrentPlan, onPurchase, purchasing }: PlanCardProps
       {/* 套餐名称 */}
       <div className="text-center mb-6">
         <h3 className="text-xl font-semibold text-gray-900 mb-2">
-          {plan.name}
+          {plan.plan_name}
         </h3>
         <div className="flex items-baseline justify-center">
           <span className="text-3xl font-bold text-gray-900">
@@ -249,7 +249,7 @@ function PlanCard({ plan, isCurrentPlan, onPurchase, purchasing }: PlanCardProps
           </span>
         </div>
         <p className="text-sm text-gray-500 mt-2">
-          适合个人开发者使用的{plan.name.includes('体验') ? '入门级' : plan.name.includes('基础') ? '基础版' : plan.name.includes('标准') ? '标准版' : plan.name.includes('专业') ? '专业版' : plan.name.includes('拼车') ? '共享版' : ''}套餐
+          适合个人开发者使用的{plan.plan_name.includes('体验') ? '入门级' : plan.plan_name.includes('基础') ? '基础版' : plan.plan_name.includes('标准') ? '标准版' : plan.plan_name.includes('专业') ? '专业版' : plan.plan_name.includes('拼车') ? '共享版' : ''}套餐
         </p>
       </div>
 

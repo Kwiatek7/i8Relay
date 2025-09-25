@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 
 interface Plan {
   id: string;
-  name: string;
+  plan_name: string;
   description?: string;
   price: number;
   currency?: string;
@@ -120,7 +120,7 @@ export default function AdminPlans() {
   const handleEdit = (plan: Plan) => {
     setEditingPlan(plan);
     setFormData({
-      name: plan.name,
+      name: plan.plan_name,
       description: plan.description || '',
       price: plan.price,
       billing_period: plan.billing_period,
@@ -410,7 +410,7 @@ export default function AdminPlans() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
                       <div className="text-sm font-medium text-gray-900">
-                        {plan.name}
+                        {plan.plan_name}
                       </div>
                       <div className="text-sm text-gray-500">
                         排序: {plan.sort_order}

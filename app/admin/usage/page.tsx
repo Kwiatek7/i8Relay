@@ -203,8 +203,9 @@ export default function AdminUsage() {
   };
 
   const formatGrowth = (growth: number) => {
-    const sign = growth > 0 ? '+' : '';
-    return `${sign}${growth.toFixed(1)}%`;
+    const safeGrowth = parseFloat(String(growth || 0));
+    const sign = safeGrowth > 0 ? '+' : '';
+    return `${sign}${safeGrowth.toFixed(1)}%`;
   };
 
   const getGrowthColor = (growth: number) => {
@@ -331,7 +332,7 @@ export default function AdminUsage() {
               <div>
                 <p className="text-sm font-medium text-gray-600">总成本</p>
                 <p className="text-3xl font-bold text-gray-900">
-                  ¥{stats.overview.total_cost.toFixed(2)}
+                  ¥{parseFloat(String(stats.overview.total_cost || 0)).toFixed(2)}
                 </p>
                 <p className={`text-sm ${getGrowthColor(stats.overview.cost_growth)}`}>
                   {formatGrowth(stats.overview.cost_growth)} 较上期
@@ -359,12 +360,12 @@ export default function AdminUsage() {
                   <div>
                     <p className="text-sm font-medium text-gray-900">{model.model}</p>
                     <p className="text-xs text-gray-500">
-                      {model.request_count} 次请求 · ¥{model.cost.toFixed(4)}
+                      {model.request_count} 次请求 · ¥{parseFloat(String(model.cost || 0)).toFixed(4)}
                     </p>
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-semibold text-gray-900">
-                      {((model.input_tokens + model.output_tokens) / 1000).toFixed(1)}K
+                      {((parseFloat(String(model.input_tokens || 0)) + parseFloat(String(model.output_tokens || 0))) / 1000).toFixed(1)}K
                     </p>
                     <p className="text-xs text-gray-500">Tokens</p>
                   </div>
@@ -390,7 +391,7 @@ export default function AdminUsage() {
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-semibold text-gray-900">{user.request_count}</p>
-                    <p className="text-xs text-gray-500">¥{user.cost.toFixed(2)}</p>
+                    <p className="text-xs text-gray-500">¥{parseFloat(String(user.cost || 0)).toFixed(2)}</p>
                   </div>
                 </div>
               ))}
