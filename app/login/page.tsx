@@ -7,6 +7,7 @@ import { User, Lock, Mail, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../lib/auth-context';
 import { Header } from '../components/layout/header';
 import { useConfig } from '../../lib/providers/config-provider';
+import { getDefaultRedirectPath } from '../../lib/auth/permissions';
 
 function LoginForm() {
   const [formData, setFormData] = useState({
@@ -46,13 +47,9 @@ function LoginForm() {
 
       // 给一个短暂延迟确保状态完全更新
       setTimeout(() => {
-        if (user.user_role === 'admin' || user.user_role === 'super_admin') {
-          console.log('管理员登录，跳转到 /admin');
-          router.push('/admin');
-        } else {
-          console.log('普通用户登录，跳转到 /dashboard');
-          router.push('/dashboard');
-        }
+        const redirectPath = getDefaultRedirectPath(user);
+        console.log(`用户角色: ${user.user_role}, 跳转到: ${redirectPath}`);
+        router.push(redirectPath);
         setLoginSuccess(false); // 重置状态
       }, 100);
     }

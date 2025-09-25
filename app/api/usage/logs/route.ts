@@ -61,7 +61,7 @@ async function getUserUsageLogs(userId: string, filter: {
     }
 
     if (filter.status) {
-      whereConditions.push('status = ?');
+      whereConditions.push('status_code = ?');
       params.push(filter.status);
     }
 

@@ -42,7 +42,7 @@ async function testDatabaseCompatibility() {
     // 测试用户筛选功能
     console.log('\n3️⃣  测试用户筛选功能...');
     const filteredUsers = await userModel.findUsers({
-      role: 'user',
+      user_role: 'user',
       status: 'active'
     }, 1, 10);
     console.log('✅ 用户筛选测试通过，找到', filteredUsers.data.length, '个用户');

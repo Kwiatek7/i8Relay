@@ -37,7 +37,7 @@ async function getUserSubscriptionInfo(userId: string) {
         us.price,
         us.currency,
         p.id as plan_id,
-        p.name as plan_name,
+        p.plan_name as plan_name,
         p.display_name,
         p.description,
         p.requests_limit,
@@ -65,7 +65,7 @@ async function getUserSubscriptionInfo(userId: string) {
       planInfo = await db.get(`
         SELECT
           id as plan_id,
-          name as plan_name,
+          plan_name as plan_name,
           display_name,
           description,
           price,

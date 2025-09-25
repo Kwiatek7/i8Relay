@@ -25,7 +25,7 @@ export interface UpdateUserData {
 
 export interface UserFilter {
   status?: string;
-  role?: string;
+  user_role?: string;
   plan_id?: string;
   email?: string;
   search?: string; // 搜索用户名或邮箱
@@ -219,9 +219,9 @@ export class UserModel extends BaseModel {
       params.push(filter.status);
     }
 
-    if (filter.role) {
+    if (filter.user_role) {
       whereConditions.push('u.user_role = ?');
-      params.push(filter.role);
+      params.push(filter.user_role);
     }
 
     if (filter.plan_id) {

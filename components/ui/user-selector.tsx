@@ -7,7 +7,7 @@ interface User {
   id: string
   username: string
   email: string
-  role: string
+  user_role: string
 }
 
 interface UserSelectorProps {
@@ -181,8 +181,8 @@ export function UserSelector({
                       <div className="text-sm text-gray-500">{user.email}</div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(user.role)}`}>
-                        {getRoleText(user.role)}
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(user.user_role)}`}>
+                        {getRoleText(user.user_role)}
                       </span>
                       {selectedUserIds.includes(user.id) && (
                         <span className="text-blue-600">✓</span>

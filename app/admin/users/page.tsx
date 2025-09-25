@@ -100,7 +100,7 @@ export default function AdminUsers() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ role: newRole }),
+        body: JSON.stringify({ user_role: newRole }),
       });
 
       if (response.ok) {
@@ -327,7 +327,7 @@ export default function AdminUsers() {
                       {user.plan}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ¥{user.balance.toFixed(2)}
+                      ¥{parseFloat(String(user.balance || 0)).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <select

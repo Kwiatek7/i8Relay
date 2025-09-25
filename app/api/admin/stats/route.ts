@@ -52,7 +52,7 @@ async function getDashboardStats() {
 
     // 总收入（从billing_records表计算）
     const totalRevenueResult = await db.get(
-      'SELECT COALESCE(SUM(amount), 0) as total FROM billing_records WHERE status = "completed"'
+      'SELECT COALESCE(SUM(amount), 0) as total FROM billing_records WHERE record_status = "completed"'
     ) as { total: number };
 
     // 用户增长（本月 vs 上月）
@@ -79,12 +79,12 @@ async function getDashboardStats() {
 
     // 收入增长（本月 vs 上月）
     const currentMonthRevenueResult = await db.get(
-      'SELECT COALESCE(SUM(amount), 0) as total FROM billing_records WHERE status = "completed" AND created_at >= ? AND created_at < ?',
+      'SELECT COALESCE(SUM(amount), 0) as total FROM billing_records WHERE record_status = "completed" AND created_at >= ? AND created_at < ?',
       [currentMonth.toISOString(), now.toISOString()]
     ) as { total: number };
 
     const lastMonthRevenueResult = await db.get(
-      'SELECT COALESCE(SUM(amount), 0) as total FROM billing_records WHERE status = "completed" AND created_at >= ? AND created_at < ?',
+      'SELECT COALESCE(SUM(amount), 0) as total FROM billing_records WHERE record_status = "completed" AND created_at >= ? AND created_at < ?',
       [lastMonth.toISOString(), currentMonth.toISOString()]
     ) as { total: number };
 

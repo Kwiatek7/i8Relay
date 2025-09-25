@@ -18,7 +18,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     // 字段映射：前端字段名 -> 后端字段名
     const fieldMapping: { [key: string]: string } = {
-      'role': 'user_role',
+      'user_role': 'user_role',
       'status': 'user_status',
       'plan': 'plan',
       'balance': 'balance'
@@ -65,10 +65,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       id: updatedUser.id,
       username: updatedUser.username,
       email: updatedUser.email,
-      role: updatedUser.user_role,
+      user_role: updatedUser.user_role,
       plan: updatedUser.plan,
       balance: updatedUser.balance,
-      status: updatedUser.user_status,
+      user_status: updatedUser.user_status,
       created_at: updatedUser.created_at,
       updated_at: updatedUser.updated_at
     };
@@ -104,10 +104,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       id: user.id,
       username: user.username,
       email: user.email,
-      role: user.user_role,
+      user_role: user.user_role,
       plan: user.plan,
       balance: user.balance,
-      status: user.user_status,
+      user_status: user.user_status,
       apiKey: user.apiKey,
       avatar: user.avatar,
       created_at: user.created_at,

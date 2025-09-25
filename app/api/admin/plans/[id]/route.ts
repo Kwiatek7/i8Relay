@@ -75,8 +75,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     // 检查套餐名称是否与其他套餐冲突
-    if (updateData.name && updateData.name !== existingPlan.name) {
-      const conflictPlan = await planModel.findByName(updateData.name);
+    if (updateData.plan_name && updateData.plan_name !== existingPlan.plan_name) {
+      const conflictPlan = await planModel.findByName(updateData.plan_name);
       if (conflictPlan && conflictPlan.id !== planId) {
         return createErrorResponse(new Error('套餐名称已存在'), 400);
       }

@@ -73,7 +73,7 @@ export interface ApiResponse<T = any> {
 // 套餐相关类型
 export interface Plan {
   id: string;
-  name: string;
+  plan_name: string;
   display_name?: string;
   description: string;
   price: number;

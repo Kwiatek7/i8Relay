@@ -4,7 +4,7 @@ import { configModel } from '../database/models';
 export interface JwtPayload {
   userId: string;
   email: string;
-  role: string;
+  user_role: string;
   sessionId: string;
   iat?: number;
   exp?: number;
@@ -70,10 +70,10 @@ export class JwtManager {
   async generateTokenPair(
     userId: string,
     email: string,
-    role: string,
+    user_role: string,
     sessionId: string
   ): Promise<TokenPair> {
-    const payload = { userId, email, role, sessionId };
+    const payload = { userId, email, user_role, sessionId };
 
     const [accessToken, refreshToken] = await Promise.all([
       this.generateAccessToken(payload),

@@ -59,7 +59,7 @@ export class PlanModel extends BaseModel {
 
     const plan = {
       id: planData.id,
-      name: planData.name,
+      plan_name: planData.name,
       display_name: planData.display_name,
       description: planData.description,
       price: planData.price,
@@ -97,7 +97,7 @@ export class PlanModel extends BaseModel {
   async findByName(name: string): Promise<Plan | null> {
     const plan = await this.findOne<any>(`
       SELECT * FROM ${this.tableName}
-      WHERE name = ?
+      WHERE plan_name = ?
     `, [name]);
 
     return plan ? this.formatPlan(plan) : null;
@@ -214,7 +214,7 @@ export class PlanModel extends BaseModel {
       // name字段映射到display_name（保持name字段也更新）
       ...(updateData.name && { 
         display_name: updateData.name,
-        name: updateData.name 
+        plan_name: updateData.name 
       })
     };
 
@@ -413,7 +413,7 @@ export class PlanModel extends BaseModel {
   private formatPlan(plan: any): Plan {
     return {
       id: plan.id,
-      name: plan.display_name || plan.name,
+      plan_name: plan.plan_name,
       description: plan.description,
       price: parseFloat(plan.price),
       currency: plan.currency,

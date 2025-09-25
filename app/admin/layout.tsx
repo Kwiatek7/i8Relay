@@ -3,6 +3,7 @@
 import { useAuth } from '../../lib/auth-context';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { canAccessAdmin, getDefaultRedirectPath } from '../../lib/auth/permissions';
 import Link from 'next/link';
 import {
   BarChart3,
@@ -29,15 +30,17 @@ export default function AdminLayout({
 
   useEffect(() => {
     if (!loading) {
-      // 检查用户是否已登录且是管理员
+      // 检查用户是否已登录
       if (!user) {
         router.push('/login?redirect=/admin');
         return;
       }
 
-      // 检查用户角色
-      if (user.user_role !== 'admin' && user.user_role !== 'super_admin') {
-        router.push('/dashboard');
+      // 检查用户是否有管理权限
+      if (!canAccessAdmin(user)) {
+        // 非管理员用户重定向到对应页面
+        const redirectPath = getDefaultRedirectPath(user);
+        router.push(redirectPath);
         return;
       }
 

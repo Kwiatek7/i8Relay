@@ -47,7 +47,7 @@ async function getUserBillingRecords(userId: string, page: number, limit: number
         amount,
         currency,
         description,
-        status,
+        record_status,
         plan_id,
         transaction_id,
         payment_method,
@@ -66,12 +66,12 @@ async function getUserBillingRecords(userId: string, page: number, limit: number
         if (record.plan_id) {
           try {
             const plan = await db.get(
-              'SELECT name, display_name FROM plans WHERE id = ?',
+              'SELECT plan_name, display_name FROM plans WHERE id = ?',
               [record.plan_id]
             );
             return {
               ...record,
-              plan_name: plan?.display_name || plan?.name || record.plan_id
+              plan_name: plan?.display_name || plan?.plan_name || record.plan_id
             };
           } catch (error) {
             return record;
@@ -88,7 +88,7 @@ async function getUserBillingRecords(userId: string, page: number, limit: number
       amount: record.amount,
       currency: record.currency || 'CNY',
       description: record.description || '',
-      status: record.status,
+      status: record.record_status,
       planId: record.plan_id,
       planName: record.plan_name,
       transactionId: record.transaction_id,

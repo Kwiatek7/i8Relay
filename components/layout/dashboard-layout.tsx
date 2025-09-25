@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { DashboardSidebar } from './dashboard-sidebar';
 import { DashboardHeader } from './dashboard-header';
+import { canAccessDashboard, getDefaultRedirectPath } from '@/lib/auth/permissions';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -27,14 +28,15 @@ export function DashboardLayout({ children, title, subtitle, className = "" }: D
     }
   }, []);
 
-  // 身份验证检查
+  // 身份验证和权限检查
   useEffect(() => {
     if (!loading) {
       if (!isAuthenticated) {
         router.push('/login');
-      } else if (user && (user.user_role === 'admin' || user.user_role === 'super_admin')) {
-        // 管理员用户重定向到管理后台
-        router.push('/admin');
+      } else if (user && !canAccessDashboard(user)) {
+        // 非普通用户（管理员）重定向到对应页面
+        const redirectPath = getDefaultRedirectPath(user);
+        router.push(redirectPath);
       }
     }
   }, [isAuthenticated, loading, router, user]);

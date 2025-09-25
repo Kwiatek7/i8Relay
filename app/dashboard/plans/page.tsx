@@ -59,7 +59,7 @@ function PlansContent() {
     for (const group of groupedPlans) {
       // 先尝试用plan字段（可能是display_name或name）匹配
       let planInGroup = group.plans?.find((p: Plan) =>
-        p.display_name === user.plan || p.name === user.plan || p.id === user.plan
+        p.display_name === user.plan || p.plan_name === user.plan || p.id === user.plan
       );
 
       if (planInGroup) {
@@ -68,7 +68,7 @@ function PlansContent() {
           startAt: new Date().toISOString(),
           endAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           remainingDays: 30,
-          name: planInGroup.display_name || planInGroup.name,
+          name: planInGroup.display_name || planInGroup.plan_name,
           description: planInGroup.description || '当前使用套餐',
           price: planInGroup.price,
           features: planInGroup.features || [],
@@ -185,7 +185,7 @@ function PlansContent() {
     // 查找当前套餐对应的Plan对象
     for (const group of groupedPlans) {
       const planInGroup = group.plans?.find((p: Plan) =>
-        p.display_name === currentPlan.name || p.name === currentPlan.name || p.id === currentPlan.planId
+        p.display_name === currentPlan.name || p.plan_name === currentPlan.name || p.id === currentPlan.planId
       );
 
       if (planInGroup) {
@@ -198,7 +198,7 @@ function PlansContent() {
     // 如果没找到对应的套餐，创建一个临时的套餐对象用于续费
     const renewPlan: Plan = {
       id: currentPlan.planId,
-      name: currentPlan.name,
+      plan_name: currentPlan.name,
       display_name: currentPlan.name,
       description: `续费 ${currentPlan.name}`,
       price: currentPlan.price,
@@ -431,7 +431,7 @@ function PlansContent() {
                             </div>
                             <div>
                               <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">
-                                {plan.name}
+                                {plan.display_name || plan.plan_name}
                               </CardTitle>
                               <CardDescription className="text-gray-600 dark:text-gray-400">
                                 {plan.description}
@@ -510,7 +510,7 @@ function PlansContent() {
                             </div>
                             <div>
                               <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">
-                                {plan.name}
+                                {plan.display_name || plan.plan_name}
                               </CardTitle>
                               <CardDescription className="text-gray-600 dark:text-gray-400">
                                 {plan.description}
@@ -588,7 +588,7 @@ function PlansContent() {
                           </div>
                           <div>
                             <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">
-                              {plan.name}
+                              {plan.display_name || plan.plan_name}
                             </CardTitle>
                             <CardDescription className="text-gray-600 dark:text-gray-400">
                               {plan.description}

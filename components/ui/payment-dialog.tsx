@@ -17,7 +17,7 @@ import {
 
 interface Plan {
   id: string;
-  name: string;
+  plan_name: string;
   price: number;
   description: string;
   features: string[];
@@ -98,14 +98,14 @@ export function PaymentDialog({ open, onClose, plan, userBalance, onPayment }: P
             <DialogHeader className="mb-6">
               <DialogTitle className="text-xl font-bold">选择支付方式</DialogTitle>
               <DialogDescription>
-                购买 {plan.name} - ¥{plan.price}
+                购买 {plan.plan_name} - ¥{plan.price}
               </DialogDescription>
             </DialogHeader>
 
             {/* 套餐信息卡片 */}
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg p-4 mb-6">
               <div className="flex justify-between items-start mb-3">
-                <h3 className="font-semibold text-lg">{plan.name}</h3>
+                <h3 className="font-semibold text-lg">{plan.plan_name}</h3>
                 <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
                   特惠价格
                 </Badge>
@@ -136,7 +136,7 @@ export function PaymentDialog({ open, onClose, plan, userBalance, onPayment }: P
                     <div>
                       <div className="font-medium">账户余额支付</div>
                       <div className="text-sm text-gray-500">
-                        当前余额: ¥{userBalance.toFixed(2)}
+                        当前余额: ¥{parseFloat(String(userBalance || 0)).toFixed(2)}
                         {!canUseBalance && <span className="text-red-500 ml-2">(余额不足)</span>}
                       </div>
                     </div>
@@ -231,7 +231,7 @@ export function PaymentDialog({ open, onClose, plan, userBalance, onPayment }: P
             <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
             <h3 className="text-xl font-semibold mb-2">支付成功！</h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              恭喜您，{plan.name} 已成功开通
+              恭喜您，{plan.plan_name} 已成功开通
             </p>
             <Button onClick={handleClose} className="bg-green-600 hover:bg-green-700">
               完成

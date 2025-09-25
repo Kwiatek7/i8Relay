@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
 
       await db.run(`
         INSERT INTO billing_records (
-          id, user_id, record_type, amount, currency, description, status, payment_method, created_at
+          id, user_id, record_type, amount, currency, description, record_status, payment_method, created_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         billingId,

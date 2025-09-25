@@ -21,10 +21,10 @@ interface UserDetail {
   id: string;
   username: string;
   email: string;
-  role: string;
+  user_role: string;
   plan: string;
   balance: number;
-  status: string;
+  user_status: string;
   apiKey: string;
   avatar?: string;
   created_at: string;
@@ -178,8 +178,8 @@ export function UserDetailDialog({ isOpen, onClose, userId }: UserDetailDialogPr
                     <Shield className="w-4 h-4 text-gray-500" />
                     <div>
                       <p className="text-sm text-gray-500">角色</p>
-                      <Badge className={getRoleBadgeColor(userDetail.role)}>
-                        {getRoleText(userDetail.role)}
+                      <Badge className={getRoleBadgeColor(userDetail.user_role)}>
+                        {getRoleText(userDetail.user_role)}
                       </Badge>
                     </div>
                   </div>
@@ -188,8 +188,8 @@ export function UserDetailDialog({ isOpen, onClose, userId }: UserDetailDialogPr
                     <Activity className="w-4 h-4 text-gray-500" />
                     <div>
                       <p className="text-sm text-gray-500">状态</p>
-                      <Badge className={getStatusBadgeColor(userDetail.status)}>
-                        {getStatusText(userDetail.status)}
+                      <Badge className={getStatusBadgeColor(userDetail.user_status)}>
+                        {getStatusText(userDetail.user_status)}
                       </Badge>
                     </div>
                   </div>
@@ -220,7 +220,7 @@ export function UserDetailDialog({ isOpen, onClose, userId }: UserDetailDialogPr
                     <div>
                       <p className="text-sm text-gray-500">账户余额</p>
                       <p className="font-medium text-green-600">
-                        ¥{userDetail.balance.toFixed(2)}
+                        ¥{parseFloat(String(userDetail.balance || 0)).toFixed(2)}
                       </p>
                     </div>
                   </div>
