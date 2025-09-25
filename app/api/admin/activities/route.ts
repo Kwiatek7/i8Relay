@@ -82,7 +82,7 @@ async function getRecentActivities(limit: number) {
 
     // 获取最近的系统配置更改
     const recentConfigs = await db.all(
-      `SELECT key, value, updated_at
+      `SELECT config_key, config_value, updated_at
        FROM system_config
        ORDER BY updated_at DESC
        LIMIT ?`,
@@ -93,7 +93,7 @@ async function getRecentActivities(limit: number) {
       activities.push({
         type: 'config_change',
         title: '系统配置更改',
-        description: `配置项 ${config.key} 已更新`,
+        description: `配置项 ${config.config_key} 已更新`,
         timestamp: config.updated_at,
         icon: 'settings',
         color: 'purple'

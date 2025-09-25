@@ -117,11 +117,11 @@ async function setupEmailVerification() {
                     console.log('📋 创建的邮箱相关表:', tables.map(t => t.name).join(', '));
                   }
                   
-                  db.all("SELECT key, value FROM system_config WHERE category = 'email_verification'", (err, configs) => {
+                  db.all("SELECT config_key, config_value FROM system_config WHERE category = 'email_verification'", (err, configs) => {
                     if (!err && configs) {
                       console.log(`⚙️  插入的邮箱验证配置: ${configs.length} 条`);
                       configs.forEach(config => {
-                        console.log(`   ${config.key}: ${config.value}`);
+                        console.log(`   ${config.config_key}: ${config.config_value}`);
                       });
                     }
                     
