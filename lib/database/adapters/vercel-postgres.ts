@@ -103,23 +103,42 @@ export class VercelPostgresAdapter implements DatabaseAdapter {
    * PostgreSQL 需要特定格式的日期时间和布尔值
    */
   private preprocessParams(params: any[]): any[] {
-    return params.map(param => {
+    return params.map((param, index) => {
+      // 处理 null 和 undefined
+      if (param === null || param === undefined) {
+        return null;
+      }
+
       // 处理 Date 对象
       if (param instanceof Date) {
         return param.toISOString();
       }
-      
+
       // 处理 ISO 8601 日期字符串
       if (typeof param === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(param)) {
         // PostgreSQL 能够正确处理 ISO 8601 格式，不需要转换
         return param;
       }
-      
+
       // 处理布尔值（PostgreSQL 原生支持布尔类型，但确保一致性）
       if (typeof param === 'boolean') {
         return param;
       }
-      
+
+      // 处理数字：确保有效性（防止 NaN 等）
+      if (typeof param === 'number') {
+        return isNaN(param) || !isFinite(param) ? null : param;
+      }
+
+      // 处理字符串数字（主要用于 LIMIT/OFFSET）
+      if (typeof param === 'string') {
+        const numValue = Number(param);
+        if (!isNaN(numValue) && isFinite(numValue) && /^\d+$/.test(param.trim())) {
+          return numValue;
+        }
+        return param;
+      }
+
       return param;
     });
   }
@@ -529,7 +548,7 @@ export class VercelPostgresAdapter implements DatabaseAdapter {
    * SQLite 语法转换为 PostgreSQL 语法（用于动态转换）
    */
   private convertSQLiteToPostgreSQL(sql: string): string {
-    return sql
+    let pgSQL = sql
       .replace(/AUTOINCREMENT/gi, 'SERIAL')
       .replace(/INTEGER PRIMARY KEY AUTOINCREMENT/gi, 'SERIAL PRIMARY KEY')
       .replace(/DATETIME DEFAULT CURRENT_TIMESTAMP/gi, 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP')
@@ -538,7 +557,68 @@ export class VercelPostgresAdapter implements DatabaseAdapter {
       .replace(/END TRANSACTION/gi, 'COMMIT')
       // 处理 SQLite 特有的语法
       .replace(/IF NOT EXISTS/gi, 'IF NOT EXISTS')
-      .replace(/REPLACE\s+INTO/gi, 'INSERT INTO ... ON CONFLICT ... DO UPDATE SET');
+      .replace(/REPLACE\s+INTO/gi, 'INSERT INTO ... ON CONFLICT ... DO UPDATE SET')
+      // 转换 SQLite 时间函数到 PostgreSQL
+      .replace(/datetime\s*\(\s*['"]now['"]\s*\)/gi, 'NOW()')
+      .replace(/date\s*\(\s*['"]now['"]\s*\)/gi, 'CURRENT_DATE')
+      .replace(/time\s*\(\s*['"]now['"]\s*\)/gi, 'CURRENT_TIME');
+
+    // 转义 PostgreSQL 保留关键字
+    pgSQL = this.escapePostgreSQLReservedWords(pgSQL);
+
+    return pgSQL;
+  }
+
+  /**
+   * 转义PostgreSQL保留关键字
+   */
+  private escapePostgreSQLReservedWords(sql: string): string {
+    // PostgreSQL 常见保留关键字列表
+    const reservedWords = [
+      'key', 'order', 'group', 'index', 'table', 'database', 'schema',
+      'column', 'constraint', 'check', 'references', 'user', 'password',
+      'timestamp', 'date', 'time', 'year', 'month', 'day', 'hour', 'minute', 'second',
+      'count', 'sum', 'max', 'min', 'avg', 'distinct', 'unique', 'primary',
+      'foreign', 'default', 'null', 'not', 'comment'
+    ];
+
+    let escapedSQL = sql;
+
+    // 为每个保留字添加双引号转义（PostgreSQL 使用双引号）
+    reservedWords.forEach(word => {
+      // 1. WHERE 子句中: WHERE key = ?
+      const whereRegex = new RegExp(`\\bWHERE\\s+([\\w\\s,=?]+\\s+)?\\b${word}\\b(?!\\s*\\()`, 'gi');
+      escapedSQL = escapedSQL.replace(whereRegex, (match) => {
+        return match.replace(new RegExp(`\\b${word}\\b`, 'gi'), `"${word}"`);
+      });
+
+      // 2. AND/OR 子句中: AND key = ?
+      const andOrRegex = new RegExp(`\\b(AND|OR)\\s+\\b${word}\\b(?!\\s*\\()`, 'gi');
+      escapedSQL = escapedSQL.replace(andOrRegex, (match, operator) => {
+        return match.replace(new RegExp(`\\b${word}\\b`, 'gi'), `"${word}"`);
+      });
+
+      // 3. SELECT 子句中: SELECT key, ...
+      const selectRegex = new RegExp(`\\bSELECT\\s+([^\\s,]*,\\s*)*\\b${word}\\b(?!\\s*\\()`, 'gi');
+      escapedSQL = escapedSQL.replace(selectRegex, (match) => {
+        return match.replace(new RegExp(`\\b${word}\\b`, 'gi'), `"${word}"`);
+      });
+
+      // 4. ORDER BY 子句中: ORDER BY key
+      const orderByRegex = new RegExp(`\\bORDER\\s+BY\\s+\\b${word}\\b(?!\\s*\\()`, 'gi');
+      escapedSQL = escapedSQL.replace(orderByRegex, (match) => {
+        return match.replace(new RegExp(`\\b${word}\\b`, 'gi'), `"${word}"`);
+      });
+
+      // 5. INSERT/UPDATE 中的列名
+      const insertRegex = new RegExp(`\\(([^)]*\\b${word}\\b[^)]*)\\)`, 'gi');
+      escapedSQL = escapedSQL.replace(insertRegex, (match, columns) => {
+        const escapedColumns = columns.replace(new RegExp(`\\b${word}\\b`, 'gi'), `"${word}"`);
+        return match.replace(columns, escapedColumns);
+      });
+    });
+
+    return escapedSQL;
   }
 
   /**

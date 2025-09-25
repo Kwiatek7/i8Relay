@@ -79,8 +79,47 @@ export class MySQLAdapter implements DatabaseAdapter {
     try {
       // 转换 SQLite 语法为 MySQL 语法
       const mysqlQuery = this.convertSQLiteToMySQL(sql);
-      const processedParams = params ? this.preprocessParams(Object.values(params)) : [];
-      const [rows] = await this.connection.execute(mysqlQuery, processedParams);
+
+      // 更安全的参数处理
+      let processedParams: any[] = [];
+      if (params !== undefined && params !== null) {
+        if (Array.isArray(params)) {
+          processedParams = this.preprocessParams(params);
+        } else if (typeof params === 'object') {
+          processedParams = this.preprocessParams(Object.values(params));
+        } else {
+          processedParams = this.preprocessParams([params]);
+        }
+      }
+
+      // 验证参数数量与占位符匹配
+      const placeholderCount = (mysqlQuery.match(/\?/g) || []).length;
+      if (processedParams.length !== placeholderCount) {
+        console.error('参数数量不匹配:', {
+          sql: mysqlQuery,
+          expectedParams: placeholderCount,
+          actualParams: processedParams.length,
+          params: processedParams
+        });
+        throw new Error(`参数数量不匹配: 期望 ${placeholderCount} 个，实际 ${processedParams.length} 个`);
+      }
+
+      // 如果没有参数，使用空数组而不是 undefined
+      const finalParams = processedParams.length > 0 ? processedParams : [];
+
+      // 尝试使用 query 方法而不是 execute，某些 MySQL2 版本在 execute 时有问题
+      let rows;
+      if (finalParams.length === 0) {
+        [rows] = await this.connection.query(mysqlQuery);
+      } else {
+        // 对于有参数的查询，先尝试 execute，失败后使用 query
+        try {
+          [rows] = await this.connection.execute(mysqlQuery, finalParams);
+        } catch (error) {
+          console.log('execute 失败，尝试使用 query 方法');
+          [rows] = await this.connection.query(mysqlQuery, finalParams);
+        }
+      }
 
       // MySQL 返回数组，取第一个结果
       if (Array.isArray(rows) && rows.length > 0) {
@@ -88,7 +127,11 @@ export class MySQLAdapter implements DatabaseAdapter {
       }
       return null;
     } catch (error) {
-      console.error('MySQL 查询失败:', error);
+      console.error('MySQL 查询失败:', {
+        sql,
+        params,
+        error: error instanceof Error ? error.message : error
+      });
       throw error;
     }
   }
@@ -99,11 +142,60 @@ export class MySQLAdapter implements DatabaseAdapter {
 
     try {
       const mysqlQuery = this.convertSQLiteToMySQL(sql);
-      const processedParams = params ? this.preprocessParams(Object.values(params)) : [];
-      const [rows] = await this.connection.execute(mysqlQuery, processedParams);
+
+      // 更安全的参数处理
+      let processedParams: any[] = [];
+      if (params !== undefined && params !== null) {
+        if (Array.isArray(params)) {
+          processedParams = this.preprocessParams(params);
+        } else if (typeof params === 'object') {
+          processedParams = this.preprocessParams(Object.values(params));
+        } else {
+          processedParams = this.preprocessParams([params]);
+        }
+      }
+
+      // 验证参数数量与占位符匹配
+      const placeholderCount = (mysqlQuery.match(/\?/g) || []).length;
+      if (processedParams.length !== placeholderCount) {
+        console.error('参数数量不匹配:', {
+          sql: mysqlQuery,
+          expectedParams: placeholderCount,
+          actualParams: processedParams.length,
+          params: processedParams
+        });
+        throw new Error(`参数数量不匹配: 期望 ${placeholderCount} 个，实际 ${processedParams.length} 个`);
+      }
+
+      // 如果没有参数，使用空数组而不是 undefined
+      const finalParams = processedParams.length > 0 ? processedParams : [];
+
+      console.log('最终执行参数:', {
+        query: mysqlQuery,
+        params: finalParams,
+        paramTypes: finalParams.map(p => typeof p)
+      });
+
+      // 尝试使用 query 方法而不是 execute，某些 MySQL2 版本在 execute 时有问题
+      let rows;
+      if (finalParams.length === 0) {
+        [rows] = await this.connection.query(mysqlQuery);
+      } else {
+        // 对于有参数的查询，先尝试 execute，失败后使用 query
+        try {
+          [rows] = await this.connection.execute(mysqlQuery, finalParams);
+        } catch (error) {
+          console.log('execute 失败，尝试使用 query 方法');
+          [rows] = await this.connection.query(mysqlQuery, finalParams);
+        }
+      }
       return Array.isArray(rows) ? rows as any[] : [];
     } catch (error) {
-      console.error('MySQL 查询失败:', error);
+      console.error('MySQL 查询失败:', {
+        sql,
+        params,
+        error: error instanceof Error ? error.message : error
+      });
       throw error;
     }
   }
@@ -114,8 +206,47 @@ export class MySQLAdapter implements DatabaseAdapter {
 
     try {
       const mysqlQuery = this.convertSQLiteToMySQL(sql);
-      const processedParams = params ? this.preprocessParams(Object.values(params)) : [];
-      const [result] = await this.connection.execute(mysqlQuery, processedParams);
+
+      // 更安全的参数处理
+      let processedParams: any[] = [];
+      if (params !== undefined && params !== null) {
+        if (Array.isArray(params)) {
+          processedParams = this.preprocessParams(params);
+        } else if (typeof params === 'object') {
+          processedParams = this.preprocessParams(Object.values(params));
+        } else {
+          processedParams = this.preprocessParams([params]);
+        }
+      }
+
+      // 验证参数数量与占位符匹配
+      const placeholderCount = (mysqlQuery.match(/\?/g) || []).length;
+      if (processedParams.length !== placeholderCount) {
+        console.error('参数数量不匹配:', {
+          sql: mysqlQuery,
+          expectedParams: placeholderCount,
+          actualParams: processedParams.length,
+          params: processedParams
+        });
+        throw new Error(`参数数量不匹配: 期望 ${placeholderCount} 个，实际 ${processedParams.length} 个`);
+      }
+
+      // 如果没有参数，使用空数组而不是 undefined
+      const finalParams = processedParams.length > 0 ? processedParams : [];
+
+      // 尝试使用 query 方法而不是 execute，某些 MySQL2 版本在 execute 时有问题
+      let result;
+      if (finalParams.length === 0) {
+        [result] = await this.connection.query(mysqlQuery);
+      } else {
+        // 对于有参数的查询，先尝试 execute，失败后使用 query
+        try {
+          [result] = await this.connection.execute(mysqlQuery, finalParams);
+        } catch (error) {
+          console.log('execute 失败，尝试使用 query 方法');
+          [result] = await this.connection.query(mysqlQuery, finalParams);
+        }
+      }
 
       // MySQL 执行结果
       const mysqlResult = result as mysql.ResultSetHeader;
@@ -125,7 +256,11 @@ export class MySQLAdapter implements DatabaseAdapter {
         changes: mysqlResult.affectedRows || 0
       };
     } catch (error) {
-      console.error('MySQL 执行失败:', error);
+      console.error('MySQL 执行失败:', {
+        sql,
+        params,
+        error: error instanceof Error ? error.message : error
+      });
       throw error;
     }
   }
@@ -410,7 +545,16 @@ export class MySQLAdapter implements DatabaseAdapter {
    * 预处理参数，将JavaScript类型转换为MySQL兼容格式
    */
   private preprocessParams(params: any[]): any[] {
-    return params.map(param => {
+    if (!Array.isArray(params)) {
+      return [];
+    }
+
+    return params.map((param, index) => {
+      // 处理 null 和 undefined
+      if (param === null || param === undefined) {
+        return null;
+      }
+
       // 处理日期时间：将ISO 8601格式转换为MySQL DATETIME格式
       if (param instanceof Date) {
         return param.toISOString().slice(0, 19).replace('T', ' ');
@@ -427,6 +571,35 @@ export class MySQLAdapter implements DatabaseAdapter {
       // 处理布尔值：MySQL使用1/0
       if (typeof param === 'boolean') {
         return param ? 1 : 0;
+      }
+
+      // 处理数字：确保是有效整数，特别是对 LIMIT/OFFSET
+      if (typeof param === 'number') {
+        if (isNaN(param) || !isFinite(param)) {
+          return null;
+        }
+        // 对于整数参数，确保它们是整数类型
+        return Number.isInteger(param) ? Math.floor(param) : param;
+      }
+
+      // 处理字符串：如果是数字字符串，转换为数字
+      if (typeof param === 'string') {
+        // 检查是否是纯数字字符串
+        const numValue = Number(param);
+        if (!isNaN(numValue) && isFinite(numValue) && /^\d+$/.test(param.trim())) {
+          return Math.floor(numValue);
+        }
+        return param;
+      }
+
+      // 处理对象：转换为JSON字符串（如果不是Date）
+      if (typeof param === 'object' && param !== null) {
+        try {
+          return JSON.stringify(param);
+        } catch (error) {
+          console.warn(`参数序列化失败 (index ${index}):`, error);
+          return null;
+        }
       }
 
       // 其他类型直接返回
@@ -451,7 +624,11 @@ export class MySQLAdapter implements DatabaseAdapter {
       .replace(/END TRANSACTION/gi, 'COMMIT')
       // 正确处理布尔值：SQLite 使用 0/1，MySQL 也使用 0/1
       .replace(/\bFALSE\b/gi, '0')
-      .replace(/\bTRUE\b/gi, '1');
+      .replace(/\bTRUE\b/gi, '1')
+      // 转换 SQLite 时间函数到 MySQL
+      .replace(/datetime\s*\(\s*['"]now['"]\s*\)/gi, 'NOW()')
+      .replace(/date\s*\(\s*['"]now['"]\s*\)/gi, 'CURDATE()')
+      .replace(/time\s*\(\s*['"]now['"]\s*\)/gi, 'CURTIME()');
 
     // 移除 TEXT 类型字段的默认值（MySQL 不支持）
     mysqlSQL = mysqlSQL.replace(/\bTEXT\s+DEFAULT\s+'[^']*'/gi, 'TEXT');
@@ -508,36 +685,29 @@ export class MySQLAdapter implements DatabaseAdapter {
 
     let escapedSQL = sql;
 
-    // 处理 WHERE 子句中的列名
+    // 为每个保留字添加反引号转义
     reservedWords.forEach(word => {
-      // 匹配 WHERE column = ? 模式
-      const wherePattern = new RegExp(`\\bWHERE\\s+([^\\s]+\\s+[^\\s]+\\s+[^\\s]+\\s+[^\\s]+\\s+)?${word}\\s*=`, 'gi');
-      escapedSQL = escapedSQL.replace(wherePattern, (match) => {
-        return match.replace(new RegExp(`\\b${word}\\b`, 'gi'), `\`${word}\``);
+      // 使用更简单直接的方法：匹配所有 word 后面跟着操作符的情况
+      // 匹配模式: word = | word < | word > | word IS | word IN | word LIKE 等
+      const operatorRegex = new RegExp(`\b${word}\b(?=\s*[=<>!]|\s+(?:IS|IN|LIKE|BETWEEN|NOT))`, 'gi');
+      escapedSQL = escapedSQL.replace(operatorRegex, `\`${word}\``);
+      
+      // 匹配 SELECT 子句中的列名: SELECT key, ...
+      const selectRegex = new RegExp(`(SELECT\s+(?:[^,\s]+,\s*)*)\b${word}\b(?=\s*[,)]|\s+FROM)`, 'gi');
+      escapedSQL = escapedSQL.replace(selectRegex, (match) => {
+        return match.replace(new RegExp(`\b${word}\b`, 'gi'), `\`${word}\``);
       });
-
-      // 匹配 AND column = ? 模式
-      const andPattern = new RegExp(`\\bAND\\s+${word}\\s*=`, 'gi');
-      escapedSQL = escapedSQL.replace(andPattern, (match) => {
-        return match.replace(new RegExp(`\\b${word}\\b`, 'gi'), `\`${word}\``);
+      
+      // 匹配 ORDER BY 子句中的列名: ORDER BY key
+      const orderByRegex = new RegExp(`(ORDER\s+BY\s+(?:[^,\s]+,\s*)*)\b${word}\b`, 'gi');
+      escapedSQL = escapedSQL.replace(orderByRegex, (match) => {
+        return match.replace(new RegExp(`\b${word}\b`, 'gi'), `\`${word}\``);
       });
-
-      // 匹配 SELECT 中的列名
-      const selectPattern = new RegExp(`\\bSELECT\\s+([^\\s,]*,\\s*)*${word}\\b`, 'gi');
-      escapedSQL = escapedSQL.replace(selectPattern, (match) => {
-        return match.replace(new RegExp(`\\b${word}\\b`, 'gi'), `\`${word}\``);
-      });
-
-      // 匹配 ORDER BY column 模式
-      const orderPattern = new RegExp(`\\bORDER\\s+BY\\s+${word}\\b`, 'gi');
-      escapedSQL = escapedSQL.replace(orderPattern, (match) => {
-        return match.replace(new RegExp(`\\b${word}\\b`, 'gi'), `\`${word}\``);
-      });
-
-      // 匹配 INSERT INTO table (columns) 中的列名
-      const insertPattern = new RegExp(`\\(([^)]*\\b${word}\\b[^)]*)\\)\\s+VALUES`, 'gi');
-      escapedSQL = escapedSQL.replace(insertPattern, (match, columns) => {
-        const escapedColumns = columns.replace(new RegExp(`\\b${word}\\b`, 'gi'), `\`${word}\``);
+      
+      // 匹配 INSERT/UPDATE 中的列名: (key, other) 或 key = ?
+      const columnRegex = new RegExp(`\(([^)]*\b${word}\b[^)]*)\)`, 'gi');
+      escapedSQL = escapedSQL.replace(columnRegex, (match, columns) => {
+        const escapedColumns = columns.replace(new RegExp(`\b${word}\b`, 'gi'), `\`${word}\``);
         return match.replace(columns, escapedColumns);
       });
     });
