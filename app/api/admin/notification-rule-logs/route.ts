@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   try {
     // 验证管理员身份
     const auth = await authenticateRequest(request);
-    if (auth.user.role !== 'admin' && auth.user.role !== 'super_admin') {
+    if (auth.user.user_role !== 'admin' && auth.user.user_role !== 'super_admin') {
       return createErrorResponse(new Error('权限不足'), 403);
     }
 
@@ -102,8 +102,8 @@ async function getNotificationRuleLogs(filter: {
       l.target_users as targetUsers,
       l.success,
       l.error_message as errorMessage,
-      r.name as ruleName,
-      r.type as ruleType
+      r.rule_name as ruleName,
+      r.rule_type as ruleType
     FROM notification_rule_logs l
     LEFT JOIN notification_rules r ON l.rule_id = r.id
     ${whereClause}

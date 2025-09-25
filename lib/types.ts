@@ -7,8 +7,8 @@ export interface User {
   balance: number;
   apiKey: string;
   avatar?: string;
-  role: 'user' | 'admin' | 'super_admin';
-  status: 'active' | 'inactive' | 'banned' | 'pending';
+  user_role: 'user' | 'admin' | 'super_admin';
+  user_status: 'active' | 'inactive' | 'banned' | 'pending';
   phone?: string;
   company?: string;
   total_requests?: number;
@@ -134,11 +134,11 @@ export interface UsageStats {
 // 账单类型
 export interface BillingRecord {
   id: string;
-  type: 'charge' | 'usage' | 'refund';
+  record_type: 'charge' | 'usage' | 'refund';
   amount: number;
   currency: string;
   description: string;
-  status: 'pending' | 'completed' | 'failed';
+  record_status: 'pending' | 'completed' | 'failed';
   created_at: string;
   updated_at: string;
 }
@@ -171,7 +171,7 @@ export interface UsageLog {
   id: string;
   timestamp: string;
   model: string;
-  method: string;
+  request_method: string;
   url: string;
   status: number;
   inputTokens: number;
@@ -211,13 +211,13 @@ export interface PaginatedResponse<T> {
 export interface Notification {
   id: string;
   title: string;
-  message: string;
-  type: 'system' | 'billing' | 'security' | 'info' | 'warning' | 'success';
+  notification_message: string;
+  notification_type: 'system' | 'billing' | 'security' | 'info' | 'warning' | 'success';
   isRead: boolean;
   createdAt: string;
   updatedAt: string;
   actionUrl?: string;
-  priority: 'low' | 'medium' | 'high';
+  notification_priority: 'low' | 'medium' | 'high';
   userId: string;
 }
 

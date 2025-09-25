@@ -32,7 +32,7 @@ export function DashboardLayout({ children, title, subtitle, className = "" }: D
     if (!loading) {
       if (!isAuthenticated) {
         router.push('/login');
-      } else if (user && (user.role === 'admin' || user.role === 'super_admin')) {
+      } else if (user && (user.user_role === 'admin' || user.user_role === 'super_admin')) {
         // 管理员用户重定向到管理后台
         router.push('/admin');
       }

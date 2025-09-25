@@ -60,8 +60,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(userData);
 
         // 验证用户状态是否正确设置
-        console.log('用户角色：', userData.role);
-        console.log('是否为管理员：', userData.role === 'admin' || userData.role === 'super_admin');
+        console.log('用户角色：', userData.user_role);
+        console.log('是否为管理员：', userData.user_role === 'admin' || userData.user_role === 'super_admin');
 
         return { success: true };
       } else {

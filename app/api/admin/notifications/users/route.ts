@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   try {
     // 验证管理员身份
     const auth = await authenticateRequest(request);
-    if (auth.user.role !== 'admin' && auth.user.role !== 'super_admin') {
+    if (auth.user.user_role !== 'admin' && auth.user.user_role !== 'super_admin') {
       return createErrorResponse(new Error('权限不足'), 403);
     }
 

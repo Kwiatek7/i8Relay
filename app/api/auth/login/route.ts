@@ -40,15 +40,15 @@ export async function POST(request: NextRequest) {
     }
 
     // 检查用户状态
-    if (user.status === 'banned') {
+    if (user.user_status === 'banned') {
       throw new AuthError('账户已被封禁', 'account_banned', 403);
     }
 
-    if (user.status === 'inactive') {
+    if (user.user_status === 'inactive') {
       throw new AuthError('账户已被停用', 'account_inactive', 403);
     }
 
-    if (user.status === 'pending') {
+    if (user.user_status === 'pending') {
       throw new AuthError('账户待激活，请检查邮箱验证', 'account_pending', 403);
     }
 
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     const tokenPair = await jwtManager.generateTokenPair(
       user.id,
       user.email,
-      user.role || 'user',
+      user.user_role || 'user',
       sessionId
     );
 
@@ -95,8 +95,8 @@ export async function POST(request: NextRequest) {
         id: user.id,
         username: user.username,
         email: user.email,
-        role: user.role, // 添加角色字段
-        status: user.status, // 添加状态字段
+        user_role: user.user_role, // 角色字段
+        user_status: user.user_status, // 状态字段
         plan: user.plan,
         balance: user.balance,
         apiKey: user.apiKey,

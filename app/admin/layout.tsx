@@ -36,7 +36,7 @@ export default function AdminLayout({
       }
 
       // 检查用户角色
-      if (user.role !== 'admin' && user.role !== 'super_admin') {
+      if (user.user_role !== 'admin' && user.user_role !== 'super_admin') {
         router.push('/dashboard');
         return;
       }
@@ -143,7 +143,7 @@ export default function AdminLayout({
                     {user?.username}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {user?.role === 'super_admin' ? '超级管理员' : '管理员'}
+                    {user?.user_role === 'super_admin' ? '超级管理员' : '管理员'}
                   </p>
                 </div>
               </div>

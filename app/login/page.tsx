@@ -39,14 +39,14 @@ function LoginForm() {
     if (isAuthenticated && user && loginSuccess) {
       console.log('用户登录状态：', {
         isAuthenticated,
-        userRole: user.role,
+        userRole: user.user_role,
         userId: user.id,
         username: user.username
       });
 
       // 给一个短暂延迟确保状态完全更新
       setTimeout(() => {
-        if (user.role === 'admin' || user.role === 'super_admin') {
+        if (user.user_role === 'admin' || user.user_role === 'super_admin') {
           console.log('管理员登录，跳转到 /admin');
           router.push('/admin');
         } else {

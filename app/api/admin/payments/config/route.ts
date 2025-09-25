@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     // 验证用户身份和管理员权限
     const auth = await authenticateRequest(request);
 
-    if (auth.user.role !== 'admin' && auth.user.role !== 'super_admin') {
+    if (auth.user.user_role !== 'admin' && auth.user.user_role !== 'super_admin') {
       return createErrorResponse(new Error('权限不足'), 403);
     }
 
@@ -85,7 +85,7 @@ export async function PUT(request: NextRequest) {
     // 验证用户身份和管理员权限
     const auth = await authenticateRequest(request);
 
-    if (auth.user.role !== 'admin' && auth.user.role !== 'super_admin') {
+    if (auth.user.user_role !== 'admin' && auth.user.user_role !== 'super_admin') {
       return createErrorResponse(new Error('权限不足'), 403);
     }
 

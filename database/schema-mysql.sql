@@ -19,8 +19,8 @@ CREATE TABLE IF NOT EXISTS `users` (
   `email` VARCHAR(255) NOT NULL UNIQUE,
   `password_hash` TEXT NOT NULL,
   `salt` VARCHAR(255) NOT NULL,
-  `role` ENUM('user', 'admin', 'super_admin') DEFAULT 'user',
-  `status` ENUM('active', 'inactive', 'banned', 'pending') DEFAULT 'active',
+  `user_role` ENUM('user', 'admin', 'super_admin') DEFAULT 'user',
+  `user_status` ENUM('active', 'inactive', 'banned', 'pending') DEFAULT 'active',
 
   -- 套餐相关
   `current_plan_id` VARCHAR(32),
@@ -39,6 +39,10 @@ CREATE TABLE IF NOT EXISTS `users` (
   `total_requests` INT DEFAULT 0,
   `total_tokens` INT DEFAULT 0,
   `total_cost` DECIMAL(10,4) DEFAULT 0.0000,
+
+  -- 邮箱验证
+  `email_verified` BOOLEAN DEFAULT FALSE,
+  `email_verified_at` DATETIME,
 
   -- 时间戳
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -70,7 +74,7 @@ CREATE TABLE IF NOT EXISTS `user_sessions` (
 CREATE TABLE IF NOT EXISTS `api_keys` (
   `id` VARCHAR(32) PRIMARY KEY DEFAULT (REPLACE(UUID(), '-', '')),
   `user_id` VARCHAR(32) NOT NULL,
-  `name` VARCHAR(255) NOT NULL,
+  `key_name` VARCHAR(255) NOT NULL,
   `key_hash` TEXT NOT NULL,
   `key_preview` VARCHAR(255) NOT NULL, -- 显示用的前缀，如 sk-abc***
   `permissions` JSON DEFAULT ('["read","write"]'), -- JSON数组
@@ -91,7 +95,7 @@ CREATE TABLE IF NOT EXISTS `api_keys` (
 -- 套餐分组表
 CREATE TABLE IF NOT EXISTS `plan_categories` (
   `id` VARCHAR(32) PRIMARY KEY,
-  `name` VARCHAR(100) NOT NULL,
+  `category_name` VARCHAR(100) NOT NULL,
   `display_name` VARCHAR(255) NOT NULL,
   `description` TEXT,
   `icon` VARCHAR(50), -- 分组图标
@@ -109,7 +113,7 @@ CREATE TABLE IF NOT EXISTS `plan_categories` (
 -- 套餐计划表
 CREATE TABLE IF NOT EXISTS `plans` (
   `id` VARCHAR(32) PRIMARY KEY,
-  `name` VARCHAR(255) NOT NULL,
+  `plan_name` VARCHAR(255) NOT NULL,
   `display_name` VARCHAR(255) NOT NULL,
   `description` TEXT NOT NULL,
   `price` DECIMAL(10,2) NOT NULL,
@@ -169,11 +173,11 @@ CREATE TABLE IF NOT EXISTS `user_subscriptions` (
 CREATE TABLE IF NOT EXISTS `billing_records` (
   `id` VARCHAR(32) PRIMARY KEY DEFAULT (REPLACE(UUID(), '-', '')),
   `user_id` VARCHAR(32) NOT NULL,
-  `type` ENUM('charge', 'usage', 'refund', 'subscription', 'topup') NOT NULL,
+  `record_type` ENUM('charge', 'usage', 'refund', 'subscription', 'topup') NOT NULL,
   `amount` DECIMAL(10,4) NOT NULL,
   `currency` VARCHAR(3) DEFAULT 'CNY',
   `description` TEXT NOT NULL,
-  `status` ENUM('pending', 'completed', 'failed', 'cancelled') DEFAULT 'pending',
+  `record_status` ENUM('pending', 'completed', 'failed', 'cancelled') DEFAULT 'pending',
 
   -- 支付相关
   `payment_method` VARCHAR(50), -- alipay, wechat, stripe等
@@ -205,7 +209,7 @@ CREATE TABLE IF NOT EXISTS `usage_logs` (
 
   -- 请求信息
   `request_id` VARCHAR(255),
-  `method` VARCHAR(10) NOT NULL,
+  `request_method` VARCHAR(10) NOT NULL,
   `endpoint` VARCHAR(500) NOT NULL,
   `model` VARCHAR(100) NOT NULL,
 
@@ -243,7 +247,7 @@ CREATE TABLE IF NOT EXISTS `usage_logs` (
 CREATE TABLE IF NOT EXISTS `daily_usage_summaries` (
   `id` VARCHAR(32) PRIMARY KEY DEFAULT (REPLACE(UUID(), '-', '')),
   `user_id` VARCHAR(32) NOT NULL,
-  `date` DATE NOT NULL,
+  `record_date` DATE NOT NULL,
 
   -- 统计数据
   `total_requests` INT DEFAULT 0,
@@ -267,7 +271,7 @@ CREATE TABLE IF NOT EXISTS `daily_usage_summaries` (
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
   CONSTRAINT `fk_daily_usage_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
-  UNIQUE KEY `uk_user_date` (`user_id`, `date`)
+  UNIQUE KEY `uk_user_date` (`user_id`, `record_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 模型使用统计表
@@ -275,7 +279,7 @@ CREATE TABLE IF NOT EXISTS `model_usage_stats` (
   `id` VARCHAR(32) PRIMARY KEY DEFAULT (REPLACE(UUID(), '-', '')),
   `user_id` VARCHAR(32) NOT NULL,
   `model` VARCHAR(100) NOT NULL,
-  `date` DATE NOT NULL,
+  `record_date` DATE NOT NULL,
 
   `requests` INT DEFAULT 0,
   `tokens` INT DEFAULT 0,
@@ -285,7 +289,7 @@ CREATE TABLE IF NOT EXISTS `model_usage_stats` (
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
   CONSTRAINT `fk_model_usage_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
-  UNIQUE KEY `uk_user_model_date` (`user_id`, `model`, `date`)
+  UNIQUE KEY `uk_user_model_date` (`user_id`, `model`, `record_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================================
@@ -296,15 +300,15 @@ CREATE TABLE IF NOT EXISTS `model_usage_stats` (
 CREATE TABLE IF NOT EXISTS `system_config` (
   `id` VARCHAR(32) PRIMARY KEY DEFAULT (REPLACE(UUID(), '-', '')),
   `category` VARCHAR(100) NOT NULL,
-  `key` VARCHAR(100) NOT NULL,
-  `value` TEXT NOT NULL,
+  `config_key` VARCHAR(100) NOT NULL,
+  `config_value` TEXT NOT NULL,
   `data_type` ENUM('string', 'number', 'boolean', 'json') DEFAULT 'string',
   `description` TEXT,
   `is_public` BOOLEAN DEFAULT FALSE, -- 是否可以公开读取
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-  UNIQUE KEY `uk_category_key` (`category`, `key`)
+  UNIQUE KEY `uk_category_key` (`category`, `config_key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 网站配置表（用于前台网站配置）
@@ -356,7 +360,7 @@ CREATE TABLE IF NOT EXISTS `site_config` (
 CREATE TABLE IF NOT EXISTS `admin_logs` (
   `id` VARCHAR(32) PRIMARY KEY DEFAULT (REPLACE(UUID(), '-', '')),
   `admin_user_id` VARCHAR(32) NOT NULL,
-  `action` VARCHAR(100) NOT NULL,
+  `admin_action` VARCHAR(100) NOT NULL,
   `resource_type` VARCHAR(50) NOT NULL, -- 资源类型：user, plan, config等
   `resource_id` VARCHAR(32),            -- 资源ID
   `old_values` JSON,             -- JSON格式的旧值
@@ -373,7 +377,7 @@ CREATE TABLE IF NOT EXISTS `system_notifications` (
   `id` VARCHAR(32) PRIMARY KEY DEFAULT (REPLACE(UUID(), '-', '')),
   `title` VARCHAR(500) NOT NULL,
   `content` TEXT NOT NULL,
-  `type` ENUM('info', 'warning', 'error', 'success') DEFAULT 'info',
+  `notification_type` ENUM('info', 'warning', 'error', 'success') DEFAULT 'info',
   `target_type` ENUM('all', 'users', 'admins', 'specific') DEFAULT 'all',
   `target_users` JSON, -- JSON数组，当target_type为specific时使用
 
@@ -385,6 +389,69 @@ CREATE TABLE IF NOT EXISTS `system_notifications` (
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 用户通知表
+CREATE TABLE IF NOT EXISTS `user_notifications` (
+  `id` VARCHAR(32) PRIMARY KEY DEFAULT (REPLACE(UUID(), '-', '')),
+  `user_id` VARCHAR(32) NOT NULL,
+  `title` VARCHAR(500) NOT NULL,
+  `notification_message` TEXT NOT NULL,
+  `notification_type` ENUM('system', 'billing', 'security', 'info', 'warning', 'success') DEFAULT 'info',
+  `notification_priority` ENUM('low', 'medium', 'high') DEFAULT 'medium',
+  `is_read` BOOLEAN DEFAULT FALSE,
+  `action_url` TEXT,
+  `metadata` JSON, -- JSON格式的额外信息
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 通知模板表
+CREATE TABLE IF NOT EXISTS `notification_templates` (
+  `id` VARCHAR(32) PRIMARY KEY DEFAULT (REPLACE(UUID(), '-', '')),
+  `template_name` VARCHAR(255) NOT NULL UNIQUE,
+  `title` VARCHAR(500) NOT NULL,
+  `template_message` TEXT NOT NULL,
+  `template_type` ENUM('system', 'billing', 'security', 'info', 'warning', 'success') DEFAULT 'info',
+  `template_priority` ENUM('low', 'medium', 'high') DEFAULT 'medium',
+  `action_url` TEXT,
+  `variables` TEXT, -- JSON格式，可用变量说明
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 通知规则表
+CREATE TABLE IF NOT EXISTS `notification_rules` (
+  `id` VARCHAR(32) PRIMARY KEY DEFAULT (REPLACE(UUID(), '-', '')),
+  `rule_name` VARCHAR(255) NOT NULL,
+  `description` TEXT,
+  `rule_type` VARCHAR(100) NOT NULL, -- balance_low, subscription_expiring, usage_limit, payment_failed等
+  `trigger_condition` TEXT NOT NULL, -- JSON格式存储触发条件
+  `template_id` VARCHAR(32) NOT NULL,
+  `target_scope` ENUM('all_users', 'specific_users', 'user_roles') DEFAULT 'all_users',
+  `target_users` TEXT, -- JSON格式存储目标用户ID或角色
+  `is_enabled` BOOLEAN DEFAULT TRUE,
+  `cooldown_minutes` INT DEFAULT 60, -- 冷却时间，避免重复发送
+  `created_by` VARCHAR(32) NOT NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_notification_rules_template` FOREIGN KEY (`template_id`) REFERENCES `notification_templates`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_notification_rules_creator` FOREIGN KEY (`created_by`) REFERENCES `users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 规则执行日志表
+CREATE TABLE IF NOT EXISTS `notification_rule_logs` (
+  `id` VARCHAR(32) PRIMARY KEY DEFAULT (REPLACE(UUID(), '-', '')),
+  `rule_id` VARCHAR(32) NOT NULL,
+  `trigger_data` TEXT, -- JSON格式，触发时的数据
+  `executed_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `notifications_sent` INT DEFAULT 0,
+  `target_users` TEXT, -- JSON格式，实际发送的用户列表
+  `success` BOOLEAN DEFAULT TRUE,
+  `error_message` TEXT,
+  CONSTRAINT `fk_notification_rule_logs_rule` FOREIGN KEY (`rule_id`) REFERENCES `notification_rules`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- ============================================================================
 -- 索引创建
 -- ============================================================================
@@ -392,7 +459,7 @@ CREATE TABLE IF NOT EXISTS `system_notifications` (
 -- 用户表索引
 CREATE INDEX `idx_users_email` ON `users`(`email`);
 CREATE INDEX `idx_users_api_key` ON `users`(`api_key`);
-CREATE INDEX `idx_users_status` ON `users`(`status`);
+CREATE INDEX `idx_users_status` ON `users`(`user_status`);
 CREATE INDEX `idx_users_created_at` ON `users`(`created_at`);
 
 -- 会话表索引
@@ -421,8 +488,8 @@ CREATE INDEX `idx_user_subscriptions_expires_at` ON `user_subscriptions`(`expire
 
 -- 账单表索引
 CREATE INDEX `idx_billing_records_user_id` ON `billing_records`(`user_id`);
-CREATE INDEX `idx_billing_records_type` ON `billing_records`(`type`);
-CREATE INDEX `idx_billing_records_status` ON `billing_records`(`status`);
+CREATE INDEX `idx_billing_records_type` ON `billing_records`(`record_type`);
+CREATE INDEX `idx_billing_records_status` ON `billing_records`(`record_status`);
 CREATE INDEX `idx_billing_records_created_at` ON `billing_records`(`created_at`);
 
 -- 使用日志表索引
@@ -433,19 +500,33 @@ CREATE INDEX `idx_usage_logs_created_at` ON `usage_logs`(`created_at`);
 CREATE INDEX `idx_usage_logs_status_code` ON `usage_logs`(`status_code`);
 
 -- 日汇总表索引
-CREATE INDEX `idx_daily_usage_date` ON `daily_usage_summaries`(`date`);
+CREATE INDEX `idx_daily_usage_date` ON `daily_usage_summaries`(`record_date`);
 
 -- 模型统计表索引
 CREATE INDEX `idx_model_usage_model` ON `model_usage_stats`(`model`);
 
 -- 系统配置索引
 CREATE INDEX `idx_system_config_category` ON `system_config`(`category`);
-CREATE INDEX `idx_system_config_key` ON `system_config`(`key`);
+CREATE INDEX `idx_system_config_key` ON `system_config`(`config_key`);
 
 -- 管理日志索引
 CREATE INDEX `idx_admin_logs_admin_user_id` ON `admin_logs`(`admin_user_id`);
-CREATE INDEX `idx_admin_logs_action` ON `admin_logs`(`action`);
+CREATE INDEX `idx_admin_logs_action` ON `admin_logs`(`admin_action`);
 CREATE INDEX `idx_admin_logs_created_at` ON `admin_logs`(`created_at`);
+
+-- 通知模板表索引
+CREATE INDEX `idx_notification_templates_name` ON `notification_templates`(`template_name`);
+CREATE INDEX `idx_notification_templates_type` ON `notification_templates`(`template_type`);
+
+-- 通知规则表索引
+CREATE INDEX `idx_notification_rules_type` ON `notification_rules`(`rule_type`);
+CREATE INDEX `idx_notification_rules_enabled` ON `notification_rules`(`is_enabled`);
+CREATE INDEX `idx_notification_rules_template_id` ON `notification_rules`(`template_id`);
+CREATE INDEX `idx_notification_rules_creator` ON `notification_rules`(`created_by`);
+
+-- 通知规则日志表索引
+CREATE INDEX `idx_notification_rule_logs_rule_id` ON `notification_rule_logs`(`rule_id`);
+CREATE INDEX `idx_notification_rule_logs_executed_at` ON `notification_rule_logs`(`executed_at`);
 
 COMMIT;
 SET FOREIGN_KEY_CHECKS = 1;

@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
 
     // 解析请求体
     const body = await request.json();
-    const { title, message, type, priority, actionUrl, targetUserId } = body;
+    const { title, message, notification_type, priority, actionUrl, targetUserId } = body;
 
     // 验证必填字段
     if (!title || !message) {
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
 
     // 检查权限：只有管理员或目标用户本人可以创建通知
     const userId = targetUserId || auth.user.id;
-    if (targetUserId && auth.user.id !== targetUserId && auth.user.role !== 'admin' && auth.user.role !== 'super_admin') {
+    if (targetUserId && auth.user.id !== targetUserId && auth.user.user_role !== 'admin' && auth.user.user_role !== 'super_admin') {
       return createErrorResponse(new Error('权限不足'), 403);
     }
 
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
       userId,
       title,
       message,
-      type: type || 'info',
+      notification_type: notification_type || 'info',
       priority: priority || 'medium',
       actionUrl: actionUrl || null
     });
@@ -102,7 +102,7 @@ async function getUserNotifications(userId: string, filter: {
   }
 
   if (filter.type) {
-    whereClause += ' AND type = ?';
+    whereClause += ' AND notification_type = ?';
     params.push(filter.type);
   }
 
@@ -132,7 +132,7 @@ async function getUserNotifications(userId: string, filter: {
       id,
       title,
       message,
-      type,
+      notification_type,
       priority,
       is_read as isRead,
       action_url as actionUrl,
@@ -151,7 +151,7 @@ async function getUserNotifications(userId: string, filter: {
     id: notification.id,
     title: notification.title,
     message: notification.message,
-    type: notification.type,
+    type: notification.notification_type,
     priority: notification.priority,
     isRead: notification.isRead === 1,
     actionUrl: notification.actionUrl,
@@ -173,7 +173,7 @@ async function createNotification(data: {
   userId: string;
   title: string;
   message: string;
-  type: string;
+  notification_type: string;
   priority: string;
   actionUrl: string | null;
 }) {
@@ -182,9 +182,9 @@ async function createNotification(data: {
   const id = 'notif_' + Math.random().toString(36).substr(2, 9);
 
   await db.run(`
-    INSERT INTO user_notifications (id, user_id, title, message, type, priority, action_url)
+    INSERT INTO user_notifications (id, user_id, title, message, notification_type, priority, action_url)
     VALUES (?, ?, ?, ?, ?, ?, ?)
-  `, [id, data.userId, data.title, data.message, data.type, data.priority, data.actionUrl]);
+  `, [id, data.userId, data.title, data.message, data.notification_type, data.priority, data.actionUrl]);
 
   // 返回创建的通知
   const notification = await db.get(`
@@ -192,7 +192,7 @@ async function createNotification(data: {
       id,
       title,
       message,
-      type,
+      notification_type,
       priority,
       is_read as isRead,
       action_url as actionUrl,
@@ -206,7 +206,7 @@ async function createNotification(data: {
     id: notification.id,
     title: notification.title,
     message: notification.message,
-    type: notification.type,
+    type: notification.notification_type,
     priority: notification.priority,
     isRead: notification.isRead === 1,
     actionUrl: notification.actionUrl,

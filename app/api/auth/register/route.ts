@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     // 根据是否需要邮箱验证，设置用户状态和验证状态
     if (requireEmailVerification) {
       await userModel.update(user.id, {
-        status: 'pending'
+        user_status: 'pending'
       });
       // 设置邮箱为未验证
       await db.run(
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
     } else {
       // 不需要验证则直接标记为已验证
       await userModel.update(user.id, {
-        status: 'active'
+        user_status: 'active'
       });
       // 设置邮箱为已验证
       await db.run(
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
     const tokenPair = await jwtManager.generateTokenPair(
       user.id,
       user.email,
-      user.role || 'user',
+      user.user_role || 'user',
       sessionId
     );
 

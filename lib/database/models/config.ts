@@ -3,8 +3,8 @@ import { BaseModel } from '../base-model';
 export interface SystemConfig {
   id: string;
   category: string;
-  key: string;
-  value: string;
+  config_key: string;
+  config_value: string;
   data_type: 'string' | 'number' | 'boolean' | 'json';
   description?: string;
   is_public: boolean;
@@ -40,14 +40,14 @@ export class ConfigModel extends BaseModel {
   async get(category: string, key: string): Promise<any> {
     const config = await this.findOne<SystemConfig>(`
       SELECT * FROM ${this.tableName}
-      WHERE category = ? AND key = ?
+      WHERE category = ? AND config_key = ?
     `, [category, key]);
 
     if (!config) {
       return null;
     }
 
-    return this.parseConfigValue(config.value, config.data_type);
+    return this.parseConfigValue(config.config_value, config.data_type);
   }
 
   // 获取分类下的所有配置
@@ -66,7 +66,7 @@ export class ConfigModel extends BaseModel {
     const result: Record<string, any> = {};
 
     configs.forEach(config => {
-      result[config.key] = this.parseConfigValue(config.value, config.data_type);
+      result[config.config_key] = this.parseConfigValue(config.config_value, config.data_type);
     });
 
     return result;
@@ -86,7 +86,7 @@ export class ConfigModel extends BaseModel {
       if (!result[config.category]) {
         result[config.category] = {};
       }
-      result[config.category][config.key] = this.parseConfigValue(config.value, config.data_type);
+      result[config.category][config.config_key] = this.parseConfigValue(config.config_value, config.data_type);
     });
 
     return result;
@@ -106,15 +106,15 @@ export class ConfigModel extends BaseModel {
     // 尝试更新现有配置
     const updateResult = await this.execute(`
       UPDATE ${this.tableName}
-      SET value = ?, data_type = ?, description = ?, is_public = ?, updated_at = ?
-      WHERE category = ? AND key = ?
+      SET config_value = ?, data_type = ?, description = ?, is_public = ?, updated_at = ?
+      WHERE category = ? AND config_key = ?
     `, [stringValue, dataType, description, isPublic, this.getCurrentTimestamp(), category, key]);
 
     // 如果没有更新到记录，则插入新记录
     if ((updateResult.changes ?? 0) === 0) {
       await this.execute(`
         INSERT INTO ${this.tableName} (
-          id, category, key, value, data_type, description, is_public
+          id, category, config_key, config_value, data_type, description, is_public
         ) VALUES (?, ?, ?, ?, ?, ?, ?)
       `, [
         this.generateId(), category, key, stringValue,
@@ -150,7 +150,7 @@ export class ConfigModel extends BaseModel {
   async delete(category: string, key: string): Promise<boolean> {
     const result = await this.execute(`
       DELETE FROM ${this.tableName}
-      WHERE category = ? AND key = ?
+      WHERE category = ? AND config_key = ?
     `, [category, key]);
 
     return (result.changes ?? 0) > 0;

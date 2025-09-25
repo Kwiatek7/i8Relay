@@ -83,7 +83,7 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthCon
     }
 
     // 检查用户状态
-    if (user.status !== 'active') {
+    if (user.user_status !== 'active') {
       throw new AuthError('用户账户已被禁用', 'account_disabled', 403);
     }
 
@@ -126,7 +126,7 @@ export function requireRole(allowedRoles: string | string[]) {
   return async (request: NextRequest): Promise<AuthContext> => {
     const auth = await authenticateRequest(request);
 
-    if (!roles.includes(auth.user.role || 'user')) {
+    if (!roles.includes(auth.user.user_role || 'user')) {
       throw new AuthError('权限不足', 'insufficient_permissions', 403);
     }
 
@@ -187,7 +187,7 @@ export async function refreshTokenMiddleware(request: NextRequest): Promise<{
     }
 
     // 检查用户状态
-    if (user.status !== 'active') {
+    if (user.user_status !== 'active') {
       throw new AuthError('用户账户已被禁用', 'account_disabled', 403);
     }
 
@@ -196,7 +196,7 @@ export async function refreshTokenMiddleware(request: NextRequest): Promise<{
     const tokenPair = await jwtManager.generateTokenPair(
       user.id,
       user.email,
-      user.role || 'user',
+      user.user_role || 'user',
       newSessionId
     );
 

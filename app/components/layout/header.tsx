@@ -116,7 +116,7 @@ export function Header() {
                 <div className="absolute right-0 mt-2 w-48 rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                   <div className="py-1">
                     <Link
-                      href={user?.role === 'admin' || user?.role === 'super_admin' ? '/admin' : '/dashboard'}
+                      href={user?.user_role === 'admin' || user?.user_role === 'super_admin' ? '/admin' : '/dashboard'}
                       className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 transform hover:scale-[1.02]"
                       onClick={() => setUserMenuOpen(false)}
                     >
@@ -212,7 +212,7 @@ export function Header() {
                         </div>
                       </div>
                       <Link
-                        href={user?.role === 'admin' || user?.role === 'super_admin' ? '/admin' : '/dashboard'}
+                        href={user?.user_role === 'admin' || user?.user_role === 'super_admin' ? '/admin' : '/dashboard'}
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">

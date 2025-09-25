@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   try {
     // 验证管理员身份
     const auth = await authenticateRequest(request);
-    if (auth.user.role !== 'admin' && auth.user.role !== 'super_admin') {
+    if (auth.user.user_role !== 'admin' && auth.user.user_role !== 'super_admin') {
       return createErrorResponse(new Error('权限不足'), 403);
     }
 
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
   try {
     // 验证管理员身份
     const auth = await authenticateRequest(request);
-    if (auth.user.role !== 'admin' && auth.user.role !== 'super_admin') {
+    if (auth.user.user_role !== 'admin' && auth.user.user_role !== 'super_admin') {
       return createErrorResponse(new Error('权限不足'), 403);
     }
 
@@ -81,11 +81,11 @@ async function getNotificationTemplates() {
   const query = `
     SELECT
       t.id,
-      t.name,
+      t.template_name,
       t.title,
-      t.message,
-      t.type,
-      t.priority,
+      t.template_message,
+      t.template_type,
+      t.template_priority,
       t.action_url as actionUrl,
       t.variables,
       t.created_at as createdAt,
@@ -102,11 +102,11 @@ async function getNotificationTemplates() {
   // 转换数据格式
   const formattedTemplates = templates.map((template: any) => ({
     id: template.id,
-    name: template.name,
+    name: template.template_name,
     title: template.title,
-    message: template.message,
-    type: template.type,
-    priority: template.priority,
+    message: template.template_message,
+    type: template.template_type,
+    priority: template.template_priority,
     actionUrl: template.actionUrl,
     variables: template.variables ? JSON.parse(template.variables) : {},
     createdAt: template.createdAt,
@@ -133,7 +133,7 @@ async function createNotificationTemplate(data: {
 
   await db.run(`
     INSERT INTO notification_templates (
-      id, name, title, message, type, priority, action_url, variables
+      id, template_name, title, template_message, template_type, template_priority, action_url, variables
     )
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `, [

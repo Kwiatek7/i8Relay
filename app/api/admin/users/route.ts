@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     // 验证用户身份和管理员权限
     const auth = await authenticateRequest(request);
 
-    if (auth.user.role !== 'admin' && auth.user.role !== 'super_admin') {
+    if (auth.user.user_role !== 'admin' && auth.user.user_role !== 'super_admin') {
       return createErrorResponse(new Error('权限不足'), 403);
     }
 
@@ -38,12 +38,12 @@ export async function GET(request: NextRequest) {
     }
 
     if (role) {
-      whereConditions.push('role = ?');
+      whereConditions.push('user_role = ?');
       params.push(role);
     }
 
     if (status) {
-      whereConditions.push('status = ?');
+      whereConditions.push('user_status = ?');
       params.push(status);
     }
 
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * pageSize;
     const usersQuery = `
       SELECT
-        id, username, email, role, current_plan_id, balance, status,
+        id, username, email, user_role, current_plan_id, balance, user_status,
         created_at, last_login_at
       FROM users
       ${whereClause}
@@ -79,10 +79,10 @@ export async function GET(request: NextRequest) {
       id: user.id,
       username: user.username,
       email: user.email,
-      role: user.role,
+      user_role: user.user_role,
       plan: user.current_plan_id,  // 字段名映射
       balance: user.balance,
-      status: user.status,
+      user_status: user.user_status,
       created_at: user.created_at,
       last_login: user.last_login_at  // 字段名映射
     }));

@@ -52,8 +52,8 @@ export default function BillingPage() {
     orderNumber: record.id.slice(-8).toUpperCase(),
     planName: record.description,
     amount: Math.abs(record.amount),
-    status: record.status === 'completed' ? 'success' :
-            record.status === 'pending' ? 'pending' : 'failed',
+    status: record.record_status === 'completed' ? 'success' :
+            record.record_status === 'pending' ? 'pending' : 'failed',
     paymentMethod: '支付宝',
     createdAt: record.created_at,
     paidAt: record.updated_at

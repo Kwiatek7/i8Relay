@@ -7,10 +7,10 @@ interface User {
   id: string;
   username: string;
   email: string;
-  role: string;
+  user_role: string;
   plan: string;
   balance: number;
-  status: string;
+  user_status: string;
   created_at: string;
   last_login: string | null;
 }
@@ -314,7 +314,7 @@ export default function AdminUsers() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <select
-                        value={user.role}
+                        value={user.user_role}
                         onChange={(e) => handleRoleChange(user.id, e.target.value)}
                         className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                       >
@@ -331,9 +331,9 @@ export default function AdminUsers() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <select
-                        value={user.status}
+                        value={user.user_status}
                         onChange={(e) => handleStatusChange(user.id, e.target.value)}
-                        className={`text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${getStatusColor(user.status)}`}
+                        className={`text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${getStatusColor(user.user_status)}`}
                       >
                         <option value="active">活跃</option>
                         <option value="suspended">已停用</option>

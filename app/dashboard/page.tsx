@@ -399,7 +399,7 @@ function DashboardWithSearchParams() {
                 <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700 px-3 py-1.5 rounded-lg">
                   <span className="text-[#565766] dark:text-gray-400">到期时间</span>
                   <span className="font-semibold text-[#0D0E24] dark:text-white">
-                    {subscriptionData?.subscription?.period?.expires_at
+                    {subscriptionData?.subscription?.period && subscriptionData.subscription.period.expires_at
                       ? new Date(subscriptionData.subscription.period.expires_at).toLocaleDateString('zh-CN')
                       : '永久有效'
                     }
@@ -408,7 +408,9 @@ function DashboardWithSearchParams() {
                 <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700 px-3 py-1.5 rounded-lg">
                   <span className="text-[#565766] dark:text-gray-400">剩余天数</span>
                   <span className="font-semibold text-[#0D0E24] dark:text-white">
-                    {subscriptionData?.subscription?.period?.remaining_days !== null
+                    {subscriptionData?.subscription?.period &&
+                     subscriptionData.subscription.period.remaining_days !== null &&
+                     subscriptionData.subscription.period.remaining_days !== undefined
                       ? `${subscriptionData.subscription.period.remaining_days}天`
                       : '永久'
                     }
@@ -472,25 +474,25 @@ function DashboardWithSearchParams() {
             <div className="grid grid-cols-2 gap-2">
               <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 rounded-lg p-3 border border-green-200 dark:border-green-800">
                 <div className="text-lg font-bold text-green-600 dark:text-green-400">
-                  ${subscriptionData?.quota?.daily_limit?.toFixed(2) || '200.00'}
+                  ${Number(subscriptionData?.quota?.daily_limit || 0).toFixed(2)}
                 </div>
                 <div className="text-xs text-green-700 dark:text-green-300">基础日额度</div>
               </div>
               <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/30 dark:to-cyan-900/30 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
                 <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                  ${subscriptionData?.quota?.temporary_quota?.toFixed(2) || '0.00'}
+                  ${Number(subscriptionData?.quota?.temporary_quota || 0).toFixed(2)}
                 </div>
                 <div className="text-xs text-blue-700 dark:text-blue-300">今日临时额度</div>
               </div>
               <div className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-900/30 dark:to-violet-900/30 rounded-lg p-3 border border-purple-200 dark:border-purple-800">
                 <div className="text-lg font-bold text-purple-600 dark:text-purple-400">
-                  ${((subscriptionData?.quota?.daily_limit || 0) + (subscriptionData?.quota?.temporary_quota || 0)).toFixed(2)}
+                  ${(Number(subscriptionData?.quota?.daily_limit || 0) + Number(subscriptionData?.quota?.temporary_quota || 0)).toFixed(2)}
                 </div>
                 <div className="text-xs text-purple-700 dark:text-purple-300">今日有效上限</div>
               </div>
               <div className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-900/30 dark:to-red-900/30 rounded-lg p-3 border border-orange-200 dark:border-orange-800">
                 <div className="text-lg font-bold text-orange-600 dark:text-orange-400">
-                  ${(todayData?.cost || 0).toFixed(4)}
+                  ${Number(todayData?.cost || 0).toFixed(4)}
                 </div>
                 <div className="text-xs text-orange-700 dark:text-orange-300">今日已消费</div>
               </div>
@@ -587,10 +589,10 @@ function DashboardWithSearchParams() {
                     <span className="bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full text-xs">USD</span>
                   </div>
                   <div className="text-2xl font-bold mb-1">
-                    ${(usageStats?.total_cost || 0).toFixed(4)}
+                    ${Number(usageStats?.total_cost || 0).toFixed(4)}
                   </div>
                   <div className="text-sm opacity-90">
-                    今日 <span className="text-yellow-200 font-medium">+${(todayData?.cost || 0).toFixed(4)}</span>
+                    今日 <span className="text-yellow-200 font-medium">+${Number(todayData?.cost || 0).toFixed(4)}</span>
                   </div>
                 </div>
               </div>
@@ -747,7 +749,7 @@ function DashboardWithSearchParams() {
                     </TableCell>
                     <TableCell className="text-sm font-semibold text-[#0D0E24] dark:text-white py-3">
                       <div className="flex items-center gap-2">
-                        <span className="text-green-600 dark:text-green-400">${day.cost.toFixed(4)}</span>
+                        <span className="text-green-600 dark:text-green-400">${Number(day.cost || 0).toFixed(4)}</span>
                       </div>
                     </TableCell>
                   </TableRow>

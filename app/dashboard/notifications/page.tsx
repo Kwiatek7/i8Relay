@@ -249,7 +249,7 @@ export default function NotificationsPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {notifications.filter(n => n.priority === 'high').length}
+                  {notifications.filter(n => n.notification_priority === 'high').length}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">高优先级</p>
               </div>
@@ -381,11 +381,11 @@ export default function NotificationsPage() {
                   >
                     <div className="flex items-start gap-4">
                       {/* 优先级指示器 */}
-                      <div className={`w-1 h-16 rounded-full ${getPriorityColor(notification.priority)}`} />
+                      <div className={`w-1 h-16 rounded-full ${getPriorityColor(notification.notification_priority)}`} />
 
                       {/* 图标 */}
-                      <div className={`p-2 rounded-lg ${getNotificationColor(notification.type)}`}>
-                        {getNotificationIcon(notification.type)}
+                      <div className={`p-2 rounded-lg ${getNotificationColor(notification.notification_type)}`}>
+                        {getNotificationIcon(notification.notification_type)}
                       </div>
 
                       {/* 内容 */}
@@ -404,7 +404,7 @@ export default function NotificationsPage() {
                                 ? 'text-gray-500 dark:text-gray-400'
                                 : 'text-gray-600 dark:text-gray-300'
                             }`}>
-                              {notification.message}
+                              {notification.notification_message}
                             </p>
                             <div className="flex items-center gap-3 mt-3">
                               <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -412,16 +412,16 @@ export default function NotificationsPage() {
                               </span>
                               <Badge
                                 variant="secondary"
-                                className={`text-xs ${getNotificationColor(notification.type)}`}
+                                className={`text-xs ${getNotificationColor(notification.notification_type)}`}
                               >
-                                {notification.type === 'billing' && '账单'}
-                                {notification.type === 'security' && '安全'}
-                                {notification.type === 'system' && '系统'}
-                                {notification.type === 'warning' && '警告'}
-                                {notification.type === 'success' && '成功'}
-                                {notification.type === 'info' && '信息'}
+                                {notification.notification_type === 'billing' && '账单'}
+                                {notification.notification_type === 'security' && '安全'}
+                                {notification.notification_type === 'system' && '系统'}
+                                {notification.notification_type === 'warning' && '警告'}
+                                {notification.notification_type === 'success' && '成功'}
+                                {notification.notification_type === 'info' && '信息'}
                               </Badge>
-                              {notification.priority === 'high' && (
+                              {notification.notification_priority === 'high' && (
                                 <Badge variant="destructive" className="text-xs">
                                   高优先级
                                 </Badge>

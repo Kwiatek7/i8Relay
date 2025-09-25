@@ -8,7 +8,7 @@ export interface CreateUserData {
   password: string;
   phone?: string;
   company?: string;
-  role?: 'user' | 'admin' | 'super_admin';
+  user_role?: 'user' | 'admin' | 'super_admin';
 }
 
 export interface UpdateUserData {
@@ -20,7 +20,7 @@ export interface UpdateUserData {
   balance?: number;
   current_plan_id?: string;
   plan_expires_at?: string;
-  status?: 'active' | 'inactive' | 'banned' | 'pending';
+  user_status?: 'active' | 'inactive' | 'banned' | 'pending';
 }
 
 export interface UserFilter {
@@ -56,12 +56,12 @@ export class UserModel extends BaseModel {
       email: userData.email,
       password_hash: passwordHash,
       salt,
-      role: userData.role || 'user',
-      status: 'active',
+      user_role: userData.user_role || 'user',
+      user_status: 'active',
       phone: userData.phone || null,
       company: userData.company || null,
       api_key: apiKey,
-      current_plan_id: 'claude-code-free', // 默认免费套餐
+      current_plan_id: null, // 用户创建时无套餐
       balance: 0.0000,
       total_requests: 0,
       total_tokens: 0,
@@ -119,7 +119,7 @@ export class UserModel extends BaseModel {
       SELECT u.*, p.display_name as plan_name
       FROM users u
       LEFT JOIN plans p ON u.current_plan_id = p.id
-      WHERE u.email = ? AND u.status = 'active'
+      WHERE u.email = ? AND u.user_status = 'active'
     `, [email]);
 
     if (!user) {
@@ -215,12 +215,12 @@ export class UserModel extends BaseModel {
 
     // 构建查询条件
     if (filter.status) {
-      whereConditions.push('u.status = ?');
+      whereConditions.push('u.user_status = ?');
       params.push(filter.status);
     }
 
     if (filter.role) {
-      whereConditions.push('u.role = ?');
+      whereConditions.push('u.user_role = ?');
       params.push(filter.role);
     }
 
@@ -279,7 +279,7 @@ export class UserModel extends BaseModel {
       // 有关联记录时，只更新状态为已删除，而不是物理删除
       const result = await this.execute(`
         UPDATE ${this.tableName}
-        SET status = 'inactive', updated_at = ?
+        SET user_status = 'inactive', updated_at = ?
         WHERE id = ?
       `, [this.getCurrentTimestamp(), id]);
 
@@ -305,8 +305,8 @@ export class UserModel extends BaseModel {
     const stats = await this.findOne<any>(`
       SELECT
         COUNT(*) as total,
-        SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active,
-        SUM(CASE WHEN status != 'active' THEN 1 ELSE 0 END) as inactive,
+        SUM(CASE WHEN user_status = 'active' THEN 1 ELSE 0 END) as active,
+        SUM(CASE WHEN user_status != 'active' THEN 1 ELSE 0 END) as inactive,
         SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) as new_this_month,
         SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) as new_today
       FROM ${this.tableName}
@@ -334,8 +334,8 @@ export class UserModel extends BaseModel {
       created_at: user.created_at,
       updated_at: user.updated_at,
       // 可以添加其他需要的字段
-      role: user.role,
-      status: user.status,
+      user_role: user.user_role,
+      user_status: user.user_status,
       phone: user.phone,
       company: user.company,
       total_requests: user.total_requests || 0,

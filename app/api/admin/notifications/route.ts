@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   try {
     // 验证管理员身份
     const auth = await authenticateRequest(request);
-    if (auth.user.role !== 'admin' && auth.user.role !== 'super_admin') {
+    if (auth.user.user_role !== 'admin' && auth.user.user_role !== 'super_admin') {
       return createErrorResponse(new Error('权限不足'), 403);
     }
 
@@ -46,25 +46,25 @@ export async function POST(request: NextRequest) {
   try {
     // 验证管理员身份
     const auth = await authenticateRequest(request);
-    if (auth.user.role !== 'admin' && auth.user.role !== 'super_admin') {
+    if (auth.user.user_role !== 'admin' && auth.user.user_role !== 'super_admin') {
       return createErrorResponse(new Error('权限不足'), 403);
     }
 
     // 解析请求体
     const body = await request.json();
-    const { title, message, type, priority, actionUrl, targetUsers, sendToAll } = body;
+    const { title, notification_message, notification_type, notification_priority, actionUrl, targetUsers, sendToAll } = body;
 
     // 验证必填字段
-    if (!title || !message) {
+    if (!title || !notification_message) {
       return createErrorResponse(new Error('标题和消息不能为空'), 400);
     }
 
     // 创建通知
     const result = await createBulkNotifications({
       title,
-      message,
-      type: type || 'info',
-      priority: priority || 'medium',
+      message: notification_message,
+      type: notification_type || 'info',
+      priority: notification_priority || 'medium',
       actionUrl: actionUrl || null,
       targetUsers: sendToAll ? null : targetUsers,
       sendToAll: sendToAll || false,
@@ -104,17 +104,17 @@ async function getAllNotifications(filter: {
   }
 
   if (filter.type) {
-    whereClause += ' AND n.type = ?';
+    whereClause += ' AND n.notification_type = ?';
     params.push(filter.type);
   }
 
   if (filter.priority) {
-    whereClause += ' AND n.priority = ?';
+    whereClause += ' AND n.notification_priority = ?';
     params.push(filter.priority);
   }
 
   if (filter.search) {
-    whereClause += ' AND (n.title LIKE ? OR n.message LIKE ?)';
+    whereClause += ' AND (n.title LIKE ? OR n.notification_message LIKE ?)';
     const searchTerm = `%${filter.search}%`;
     params.push(searchTerm, searchTerm);
   }
@@ -138,9 +138,9 @@ async function getAllNotifications(filter: {
     SELECT
       n.id,
       n.title,
-      n.message,
-      n.type,
-      n.priority,
+      n.notification_message,
+      n.notification_type,
+      n.notification_priority,
       n.is_read as isRead,
       n.action_url as actionUrl,
       n.created_at as createdAt,
@@ -161,9 +161,9 @@ async function getAllNotifications(filter: {
   const formattedNotifications = notifications.map((notification: any) => ({
     id: notification.id,
     title: notification.title,
-    message: notification.message,
-    type: notification.type,
-    priority: notification.priority,
+    notification_message: notification.notification_message,
+    notification_type: notification.notification_type,
+    notification_priority: notification.notification_priority,
     isRead: notification.isRead === 1,
     actionUrl: notification.actionUrl,
     createdAt: notification.createdAt,
@@ -200,7 +200,7 @@ async function createBulkNotifications(data: {
 
   if (data.sendToAll) {
     // 获取所有用户ID
-    const users = await db.all('SELECT id FROM users WHERE status = ?', ['active']);
+    const users = await db.all('SELECT id FROM users WHERE user_status = ?', ['active']);
     targetUserIds = users.map((user: any) => user.id);
   } else if (data.targetUsers && data.targetUsers.length > 0) {
     targetUserIds = data.targetUsers;
@@ -216,7 +216,7 @@ async function createBulkNotifications(data: {
 
     try {
       await db.run(`
-        INSERT INTO user_notifications (id, user_id, title, message, type, priority, action_url)
+        INSERT INTO user_notifications (id, user_id, title, notification_message, notification_type, notification_priority, action_url)
         VALUES (?, ?, ?, ?, ?, ?, ?)
       `, [id, userId, data.title, data.message, data.type, data.priority, data.actionUrl]);
 
@@ -224,9 +224,9 @@ async function createBulkNotifications(data: {
         id,
         userId,
         title: data.title,
-        message: data.message,
-        type: data.type,
-        priority: data.priority,
+        notification_message: data.message,
+        notification_type: data.type,
+        notification_priority: data.priority,
         actionUrl: data.actionUrl
       });
     } catch (error) {

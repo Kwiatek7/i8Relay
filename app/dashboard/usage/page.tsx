@@ -307,7 +307,7 @@ export default function UsagePage() {
                       <TableRow key={log.id}>
                         <TableCell>{formatDate(log.timestamp)}</TableCell>
                         <TableCell>{log.model}</TableCell>
-                        <TableCell>{log.method}</TableCell>
+                        <TableCell>{log.request_method}</TableCell>
                         <TableCell className="max-w-xs truncate" title={log.url}>{log.url}</TableCell>
                         <TableCell>
                           <Badge className={`${getStatusColor(log.status)}`}>

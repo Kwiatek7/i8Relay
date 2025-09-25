@@ -16,13 +16,20 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return createErrorResponse(new Error('用户不存在'), 404);
     }
 
-    // 只允许更新特定字段
-    const allowedFields = ['role', 'status', 'plan', 'balance'];
+    // 字段映射：前端字段名 -> 后端字段名
+    const fieldMapping: { [key: string]: string } = {
+      'role': 'user_role',
+      'status': 'user_status',
+      'plan': 'plan',
+      'balance': 'balance'
+    };
+
     const filteredData: any = {};
 
-    for (const field of allowedFields) {
-      if (updateData[field] !== undefined) {
-        filteredData[field] = updateData[field];
+    // 映射并过滤字段
+    for (const [frontendField, backendField] of Object.entries(fieldMapping)) {
+      if (updateData[frontendField] !== undefined) {
+        filteredData[backendField] = updateData[frontendField];
       }
     }
 
@@ -31,12 +38,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     // 验证角色值
-    if (filteredData.role && !['user', 'admin', 'super_admin'].includes(filteredData.role)) {
+    if (filteredData.user_role && !['user', 'admin', 'super_admin'].includes(filteredData.user_role)) {
       return createErrorResponse(new Error('无效的用户角色'), 400);
     }
 
     // 验证状态值
-    if (filteredData.status && !['active', 'suspended', 'pending'].includes(filteredData.status)) {
+    if (filteredData.user_status && !['active', 'suspended', 'pending'].includes(filteredData.user_status)) {
       return createErrorResponse(new Error('无效的用户状态'), 400);
     }
 
@@ -58,10 +65,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       id: updatedUser.id,
       username: updatedUser.username,
       email: updatedUser.email,
-      role: updatedUser.role,
+      role: updatedUser.user_role,
       plan: updatedUser.plan,
       balance: updatedUser.balance,
-      status: updatedUser.status,
+      status: updatedUser.user_status,
       created_at: updatedUser.created_at,
       updated_at: updatedUser.updated_at
     };
@@ -97,10 +104,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       id: user.id,
       username: user.username,
       email: user.email,
-      role: user.role,
+      role: user.user_role,
       plan: user.plan,
       balance: user.balance,
-      status: user.status,
+      status: user.user_status,
       apiKey: user.apiKey,
       avatar: user.avatar,
       created_at: user.created_at,

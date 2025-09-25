@@ -44,6 +44,8 @@ export async function PUT(request: NextRequest) {
       id: updatedUser.id,
       username: updatedUser.username,
       email: updatedUser.email,
+      user_role: updatedUser.user_role,
+      user_status: updatedUser.user_status,
       plan: updatedUser.plan,
       balance: updatedUser.balance,
       apiKey: updatedUser.apiKey,

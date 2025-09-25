@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 检查用户状态
-    if (user.status !== 'active') {
+    if (user.user_status !== 'active') {
       return NextResponse.json(
         { error: 'ACCOUNT_INACTIVE', message: '账户已被禁用，请联系客服' },
         { status: 403 }

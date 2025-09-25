@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   try {
     // 验证管理员身份
     const auth = await authenticateRequest(request);
-    if (auth.user.role !== 'admin' && auth.user.role !== 'super_admin') {
+    if (auth.user.user_role !== 'admin' && auth.user.user_role !== 'super_admin') {
       return createErrorResponse(new Error('权限不足'), 403);
     }
 
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
   try {
     // 验证管理员身份
     const auth = await authenticateRequest(request);
-    if (auth.user.role !== 'admin' && auth.user.role !== 'super_admin') {
+    if (auth.user.user_role !== 'admin' && auth.user.user_role !== 'super_admin') {
       return createErrorResponse(new Error('权限不足'), 403);
     }
 
@@ -100,7 +100,7 @@ async function getNotificationRules(filter: {
   const params: any[] = [];
 
   if (filter.type) {
-    whereClause += ' AND r.type = ?';
+    whereClause += ' AND r.rule_type = ?';
     params.push(filter.type);
   }
 
@@ -112,9 +112,9 @@ async function getNotificationRules(filter: {
   const query = `
     SELECT
       r.id,
-      r.name,
+      r.rule_name,
       r.description,
-      r.type,
+      r.rule_type,
       r.trigger_condition as triggerCondition,
       r.template_id as templateId,
       r.target_scope as targetScope,
@@ -124,10 +124,10 @@ async function getNotificationRules(filter: {
       r.created_by as createdBy,
       r.created_at as createdAt,
       r.updated_at as updatedAt,
-      t.name as templateName,
+      t.template_name as templateName,
       t.title as templateTitle,
-      t.type as templateType,
-      t.priority as templatePriority,
+      t.template_type as templateType,
+      t.template_priority as templatePriority,
       u.username as createdByUsername
     FROM notification_rules r
     LEFT JOIN notification_templates t ON r.template_id = t.id
@@ -141,9 +141,9 @@ async function getNotificationRules(filter: {
   // 转换数据格式
   const formattedRules = rules.map((rule: any) => ({
     id: rule.id,
-    name: rule.name,
+    name: rule.rule_name,
     description: rule.description,
-    type: rule.type,
+    type: rule.rule_type,
     triggerCondition: rule.triggerCondition ? JSON.parse(rule.triggerCondition) : {},
     templateId: rule.templateId,
     targetScope: rule.targetScope,
@@ -184,7 +184,7 @@ async function createNotificationRule(data: {
 
   await db.run(`
     INSERT INTO notification_rules (
-      id, name, description, type, trigger_condition, template_id,
+      id, rule_name, description, rule_type, trigger_condition, template_id,
       target_scope, target_users, is_enabled, cooldown_minutes, created_by
     )
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)

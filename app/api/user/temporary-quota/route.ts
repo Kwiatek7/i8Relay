@@ -106,7 +106,7 @@ async function increaseTemporaryQuota(userId: string) {
     const billingId = 'bill_temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     await db.run(`
       INSERT INTO billing_records (
-        id, user_id, type, amount, currency, description, status, payment_method, created_at
+        id, user_id, record_type, amount, currency, description, status, payment_method, created_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       billingId,

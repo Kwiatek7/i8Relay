@@ -43,7 +43,7 @@ async function getUserBillingRecords(userId: string, page: number, limit: number
     const records = await db.all(
       `SELECT
         id,
-        type,
+        record_type,
         amount,
         currency,
         description,
@@ -84,7 +84,7 @@ async function getUserBillingRecords(userId: string, page: number, limit: number
     // 转换字段名为前端期望的camelCase格式
     const formattedRecords = recordsWithPlan.map((record: any) => ({
       id: record.id,
-      type: record.type,
+      type: record.record_type,
       amount: record.amount,
       currency: record.currency || 'CNY',
       description: record.description || '',

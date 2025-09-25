@@ -19,9 +19,9 @@ interface TriggerCondition {
 interface AdminNotification {
   id: string
   title: string
-  message: string
-  type: string
-  priority: string
+  notification_message: string
+  notification_type: string
+  notification_priority: string
   isRead: boolean
   actionUrl: string | null
   createdAt: string
@@ -37,9 +37,9 @@ interface NotificationTemplate {
   id: string
   name: string
   title: string
-  message: string
-  type: NotificationType
-  priority: string
+  notification_message: string
+  notification_type: NotificationType
+  notification_priority: string
   actionUrl: string | null
   variables: any
   createdAt: string
@@ -51,7 +51,7 @@ interface NotificationRule {
   id: string
   name: string
   description: string
-  type: string
+  trigger_type: string
   triggerCondition: TriggerCondition
   templateId: string
   targetScope: string
@@ -121,9 +121,9 @@ function AdminNotificationsPageContent() {
   const [newTemplate, setNewTemplate] = useState({
     name: '',
     title: '',
-    message: '',
-    type: 'info' as NotificationType,
-    priority: 'medium',
+    notification_message: '',
+    notification_type: 'info' as NotificationType,
+    notification_priority: 'medium',
     actionUrl: '',
     variables: ''
   })
@@ -133,7 +133,7 @@ function AdminNotificationsPageContent() {
   const [newRule, setNewRule] = useState({
     name: '',
     description: '',
-    type: 'balance_low',
+    trigger_type: 'balance_low',
     triggerCondition: {} as TriggerCondition,
     templateId: '',
     targetScope: 'all_users',
@@ -246,9 +246,9 @@ function AdminNotificationsPageContent() {
     try {
       const notificationData = {
         title: newNotification.title,
-        message: newNotification.content,
-        type: newNotification.type,
-        priority: 'medium',
+        notification_message: newNotification.content,
+        notification_type: newNotification.type,
+        notification_priority: 'medium',
         targetUsers: newNotification.targetUsers,
         sendToAll: newNotification.targetUsers.length === 0,
         scheduled_at: newNotification.scheduled_at
@@ -360,9 +360,9 @@ function AdminNotificationsPageContent() {
       const templateData = {
         name: newTemplate.name,
         title: newTemplate.title,
-        message: newTemplate.message,
-        type: newTemplate.type,
-        priority: newTemplate.priority,
+        notification_message: newTemplate.notification_message,
+        notification_type: newTemplate.notification_type,
+        notification_priority: newTemplate.notification_priority,
         actionUrl: newTemplate.actionUrl || null,
         variables: newTemplate.variables ? JSON.parse(newTemplate.variables) : {}
       };
@@ -379,9 +379,9 @@ function AdminNotificationsPageContent() {
         setNewTemplate({
           name: '',
           title: '',
-          message: '',
-          type: 'info',
-          priority: 'medium',
+          notification_message: '',
+          notification_type: 'info',
+          notification_priority: 'medium',
           actionUrl: '',
           variables: ''
         })
@@ -404,9 +404,9 @@ function AdminNotificationsPageContent() {
       const templateData = {
         name: newTemplate.name,
         title: newTemplate.title,
-        message: newTemplate.message,
-        type: newTemplate.type,
-        priority: newTemplate.priority,
+        notification_message: newTemplate.notification_message,
+        notification_type: newTemplate.notification_type,
+        notification_priority: newTemplate.notification_priority,
         actionUrl: newTemplate.actionUrl || null,
         variables: newTemplate.variables ? JSON.parse(newTemplate.variables) : {}
       };
@@ -424,9 +424,9 @@ function AdminNotificationsPageContent() {
         setNewTemplate({
           name: '',
           title: '',
-          message: '',
-          type: 'info',
-          priority: 'medium',
+          notification_message: '',
+          notification_type: 'info',
+          notification_priority: 'medium',
           actionUrl: '',
           variables: ''
         })
@@ -478,7 +478,7 @@ function AdminNotificationsPageContent() {
         setNewRule({
           name: '',
           description: '',
-          type: 'balance_low',
+          trigger_type: 'balance_low',
           triggerCondition: {} as TriggerCondition,
           templateId: '',
           targetScope: 'all_users',
@@ -515,7 +515,7 @@ function AdminNotificationsPageContent() {
         setNewRule({
           name: '',
           description: '',
-          type: 'balance_low',
+          trigger_type: 'balance_low',
           triggerCondition: {} as TriggerCondition,
           templateId: '',
           targetScope: 'all_users',
@@ -570,7 +570,7 @@ function AdminNotificationsPageContent() {
       const ruleData = {
         name: rule.name,
         description: rule.description,
-        type: rule.type,
+        trigger_type: rule.trigger_type,
         triggerCondition: rule.triggerCondition,
         templateId: rule.templateId,
         targetScope: rule.targetScope,
@@ -876,17 +876,17 @@ function AdminNotificationsPageContent() {
                                 {notification.title}
                               </div>
                               <div className="text-sm text-gray-500 truncate max-w-xs">
-                                {notification.message}
+                                {notification.notification_message}
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getTypeColor(notification.type)}`}>
-                                {getTypeText(notification.type)}
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getTypeColor(notification.notification_type)}`}>
+                                {getTypeText(notification.notification_type)}
                               </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPriorityColor(notification.priority)}`}>
-                                {getPriorityText(notification.priority)}
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPriorityColor(notification.notification_priority)}`}>
+                                {getPriorityText(notification.notification_priority)}
                               </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
@@ -971,9 +971,9 @@ function AdminNotificationsPageContent() {
                     setNewTemplate({
                       name: '',
                       title: '',
-                      message: '',
-                      type: 'info',
-                      priority: 'medium',
+                      notification_message: '',
+                      notification_type: 'info',
+                      notification_priority: 'medium',
                       actionUrl: '',
                       variables: ''
                     })
@@ -992,17 +992,17 @@ function AdminNotificationsPageContent() {
                       <div className="flex justify-between items-start mb-2">
                         <h4 className="font-medium text-gray-900">{template.name}</h4>
                         <div className="flex items-center gap-2">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getTypeColor(template.type)}`}>
-                            {getTypeText(template.type)}
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getTypeColor(template.notification_type)}`}>
+                            {getTypeText(template.notification_type)}
                           </span>
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPriorityColor(template.priority)}`}>
-                            {getPriorityText(template.priority)}
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPriorityColor(template.notification_priority)}`}>
+                            {getPriorityText(template.notification_priority)}
                           </span>
                         </div>
                       </div>
                       <p className="text-sm text-gray-600 mb-2">{template.title}</p>
                       <div className="text-xs text-gray-500 mb-3 h-12 overflow-hidden">
-                        {template.message}
+                        {template.notification_message}
                       </div>
                       <div className="flex justify-between items-center">
                         <div className="text-xs text-gray-400">
@@ -1019,9 +1019,9 @@ function AdminNotificationsPageContent() {
                               setNewTemplate({
                                 name: template.name,
                                 title: template.title,
-                                message: template.message,
-                                type: template.type as NotificationType,
-                                priority: template.priority,
+                                notification_message: template.notification_message,
+                                notification_type: template.notification_type as NotificationType,
+                                notification_priority: template.notification_priority,
                                 actionUrl: template.actionUrl || '',
                                 variables: JSON.stringify(template.variables || {}, null, 2)
                               })
@@ -1061,7 +1061,7 @@ function AdminNotificationsPageContent() {
                     setNewRule({
                       name: '',
                       description: '',
-                      type: 'balance_low',
+                      trigger_type: 'balance_low',
                       triggerCondition: {} as TriggerCondition,
                       templateId: '',
                       targetScope: 'all_users',
@@ -1086,7 +1086,7 @@ function AdminNotificationsPageContent() {
                           <h4 className="font-medium text-gray-900 mb-2">{rule.name}</h4>
                           <p className="text-sm text-gray-600 mb-2">{rule.description}</p>
                           <div className="text-xs text-gray-500 space-y-1">
-                            <div>类型: {getRuleTypeText(rule.type)}</div>
+                            <div>类型: {getRuleTypeText(rule.trigger_type)}</div>
                             <div>模板: {rule.template?.name || rule.templateId}</div>
                             <div>目标: {rule.targetScope === 'all_users' ? '所有用户' : '指定用户'}</div>
                             <div>冷却时间: {rule.cooldownMinutes}分钟</div>
@@ -1108,7 +1108,7 @@ function AdminNotificationsPageContent() {
                               setNewRule({
                                 name: rule.name,
                                 description: rule.description,
-                                type: rule.type,
+                                trigger_type: rule.trigger_type,
                                 triggerCondition: rule.triggerCondition,
                                 templateId: rule.templateId,
                                 targetScope: rule.targetScope,
@@ -1263,8 +1263,8 @@ function AdminNotificationsPageContent() {
                   内容
                 </label>
                 <Textarea 
-                  value={newTemplate.message}
-                  onChange={(e) => setNewTemplate({...newTemplate, message: e.target.value})}
+                  value={newTemplate.notification_message}
+                  onChange={(e) => setNewTemplate({...newTemplate, notification_message: e.target.value})}
                   placeholder="通知内容模板，支持 {{变量}} 语法" 
                   rows={4} 
                 />
@@ -1274,8 +1274,8 @@ function AdminNotificationsPageContent() {
                   优先级
                 </label>
                 <Select
-                  value={newTemplate.priority}
-                  onChange={(e) => setNewTemplate({...newTemplate, priority: e.target.value})}
+                  value={newTemplate.notification_priority}
+                  onChange={(e) => setNewTemplate({...newTemplate, notification_priority: e.target.value})}
                 >
                   <option value="low">低</option>
                   <option value="medium">中</option>
@@ -1308,8 +1308,8 @@ function AdminNotificationsPageContent() {
                   类型
                 </label>
                 <Select
-                  value={newTemplate.type}
-                  onChange={(e) => setNewTemplate({...newTemplate, type: e.target.value as NotificationType})}
+                  value={newTemplate.notification_type}
+                  onChange={(e) => setNewTemplate({...newTemplate, notification_type: e.target.value as NotificationType})}
                 >
                   <option value="info">信息</option>
                   <option value="warning">警告</option>
@@ -1376,8 +1376,8 @@ function AdminNotificationsPageContent() {
                   触发类型
                 </label>
                 <Select
-                  value={newRule.type}
-                  onChange={(e) => setNewRule({...newRule, type: e.target.value})}
+                  value={newRule.trigger_type}
+                  onChange={(e) => setNewRule({...newRule, trigger_type: e.target.value})}
                 >
                   <option value="">选择触发类型</option>
                   <option value="balance_low">余额不足</option>
@@ -1427,7 +1427,7 @@ function AdminNotificationsPageContent() {
               )}
 
               {/* 触发条件 */}
-              {newRule.type === 'balance_low' && (
+              {newRule.trigger_type === 'balance_low' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     余额阈值（元）
@@ -1446,7 +1446,7 @@ function AdminNotificationsPageContent() {
                 </div>
               )}
 
-              {newRule.type === 'subscription_expiring' && (
+              {newRule.trigger_type === 'subscription_expiring' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     提前天数
@@ -1464,7 +1464,7 @@ function AdminNotificationsPageContent() {
                 </div>
               )}
 
-              {newRule.type === 'usage_limit' && (
+              {newRule.trigger_type === 'usage_limit' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     使用量阈值（%）
@@ -1559,8 +1559,8 @@ function AdminNotificationsPageContent() {
                   触发类型
                 </label>
                 <Select
-                  value={newRule.type}
-                  onChange={(e) => setNewRule({...newRule, type: e.target.value})}
+                  value={newRule.trigger_type}
+                  onChange={(e) => setNewRule({...newRule, trigger_type: e.target.value})}
                 >
                   <option value="">选择触发类型</option>
                   <option value="balance_low">余额不足</option>
@@ -1610,7 +1610,7 @@ function AdminNotificationsPageContent() {
               )}
 
               {/* 触发条件 */}
-              {newRule.type === 'balance_low' && (
+              {newRule.trigger_type === 'balance_low' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     余额阈值（元）
@@ -1629,7 +1629,7 @@ function AdminNotificationsPageContent() {
                 </div>
               )}
 
-              {newRule.type === 'subscription_expiring' && (
+              {newRule.trigger_type === 'subscription_expiring' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     提前天数
@@ -1647,7 +1647,7 @@ function AdminNotificationsPageContent() {
                 </div>
               )}
 
-              {newRule.type === 'usage_limit' && (
+              {newRule.trigger_type === 'usage_limit' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     使用量阈值（%）

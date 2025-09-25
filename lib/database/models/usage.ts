@@ -90,7 +90,7 @@ export class UsageModel extends BaseModel {
 
     // 获取每日统计
     const dailyStats = await this.findMany<{
-      date: string;
+      record_date: string;
       requests: number;
       tokens: number;
       input_tokens: number;
@@ -100,7 +100,7 @@ export class UsageModel extends BaseModel {
       cost: number;
     }>(`
       SELECT
-        DATE(created_at) as date,
+        DATE(created_at) as record_date,
         COUNT(*) as requests,
         COALESCE(SUM(total_tokens), 0) as tokens,
         COALESCE(SUM(input_tokens), 0) as input_tokens,
@@ -111,7 +111,7 @@ export class UsageModel extends BaseModel {
       FROM ${this.tableName}
       WHERE user_id = ? AND created_at >= ?
       GROUP BY DATE(created_at)
-      ORDER BY date DESC
+      ORDER BY record_date DESC
     `, [userId, startDate.toISOString()]);
 
     // 获取模型使用统计
@@ -137,7 +137,7 @@ export class UsageModel extends BaseModel {
       total_tokens: totalStats?.total_tokens || 0,
       total_cost: totalStats?.total_cost || 0,
       daily_requests: dailyStats.map(stat => ({
-        date: stat.date,
+        date: stat.record_date,
         requests: stat.requests,
         tokens: stat.tokens,
         inputTokens: stat.input_tokens || 0,
@@ -255,12 +255,12 @@ export class UsageModel extends BaseModel {
     let params: any[] = [userId];
 
     if (filter.startDate) {
-      whereConditions.push('date >= ?');
+      whereConditions.push('record_date >= ?');
       params.push(filter.startDate);
     }
 
     if (filter.endDate) {
-      whereConditions.push('date <= ?');
+      whereConditions.push('record_date <= ?');
       params.push(filter.endDate);
     }
 
@@ -268,14 +268,14 @@ export class UsageModel extends BaseModel {
 
     const baseQuery = `
       SELECT
-        date,
+        record_date,
         total_requests as totalRequests,
         total_tokens as totalTokens,
         total_cost as totalCost,
         avg_response_time_ms as avgDuration
       FROM daily_usage_summaries
       ${whereClause}
-      ORDER BY date DESC
+      ORDER BY record_date DESC
     `;
 
     const countQuery = `
@@ -334,18 +334,18 @@ export class UsageModel extends BaseModel {
     `, [startDate.toISOString()]);
 
     const dailyGrowth = await this.findMany<{
-      date: string;
+      record_date: string;
       requests: number;
       users: number;
     }>(`
       SELECT
-        DATE(created_at) as date,
+        DATE(created_at) as record_date,
         COUNT(*) as requests,
         COUNT(DISTINCT user_id) as users
       FROM ${this.tableName}
       WHERE created_at >= ?
       GROUP BY DATE(created_at)
-      ORDER BY date DESC
+      ORDER BY record_date DESC
     `, [startDate.toISOString()]);
 
     return {
@@ -354,7 +354,11 @@ export class UsageModel extends BaseModel {
       totalCost: Number(totalStats?.total_cost) || 0,
       activeUsers: totalStats?.active_users || 0,
       topModels,
-      dailyGrowth
+      dailyGrowth: dailyGrowth.map(item => ({
+        date: item.record_date,
+        requests: item.requests,
+        users: item.users
+      }))
     };
   }
 
@@ -389,7 +393,7 @@ export class UsageModel extends BaseModel {
         cache_read_tokens = cache_read_tokens + ?,
         total_cost = total_cost + ?,
         updated_at = ?
-      WHERE user_id = ? AND date = ?
+      WHERE user_id = ? AND record_date = ?
     `, [
       usage.status_code >= 200 && usage.status_code < 300 ? 1 : 0,
       usage.status_code >= 400 ? 1 : 0,
@@ -408,7 +412,7 @@ export class UsageModel extends BaseModel {
     if ((updateResult.changes ?? 0) === 0) {
       await this.execute(`
         INSERT INTO daily_usage_summaries (
-          id, user_id, date,
+          id, user_id, record_date,
           total_requests, successful_requests, failed_requests,
           total_tokens, input_tokens, output_tokens,
           cache_creation_tokens, cache_read_tokens,
@@ -441,14 +445,14 @@ export class UsageModel extends BaseModel {
         tokens = tokens + ?,
         cost = cost + ?,
         updated_at = ?
-      WHERE user_id = ? AND model = ? AND date = ?
+      WHERE user_id = ? AND model = ? AND record_date = ?
     `, [usage.total_tokens, usage.cost, this.getCurrentTimestamp(), userId, model, today]);
 
     // 如果没有更新到记录，则插入新记录
     if ((updateResult.changes ?? 0) === 0) {
       await this.execute(`
         INSERT INTO model_usage_stats (
-          id, user_id, model, date, requests, tokens, cost
+          id, user_id, model, record_date, requests, tokens, cost
         ) VALUES (?, ?, ?, ?, 1, ?, ?)
       `, [this.generateId(), userId, model, today, usage.total_tokens, usage.cost]);
     }

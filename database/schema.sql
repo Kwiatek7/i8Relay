@@ -12,8 +12,8 @@ CREATE TABLE IF NOT EXISTS users (
   email TEXT NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
   salt TEXT NOT NULL,
-  role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin', 'super_admin')),
-  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'banned', 'pending')),
+  user_role TEXT DEFAULT 'user' CHECK (user_role IN ('user', 'admin', 'super_admin')),
+  user_status TEXT DEFAULT 'active' CHECK (user_status IN ('active', 'inactive', 'banned', 'pending')),
 
   -- 套餐相关
   current_plan_id TEXT,
@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS user_sessions (
 CREATE TABLE IF NOT EXISTS api_keys (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   user_id TEXT NOT NULL,
-  name TEXT NOT NULL,
+  key_name TEXT NOT NULL,
   key_hash TEXT NOT NULL UNIQUE,
   key_preview TEXT NOT NULL, -- 显示用的前缀，如 sk-abc***
   permissions TEXT DEFAULT '["read","write"]', -- JSON数组
@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS api_keys (
 -- 套餐分组表
 CREATE TABLE IF NOT EXISTS plan_categories (
   id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
+  category_name TEXT NOT NULL,
   display_name TEXT NOT NULL,
   description TEXT,
   icon TEXT, -- 分组图标
@@ -99,7 +99,7 @@ CREATE TABLE IF NOT EXISTS plan_categories (
 -- 套餐计划表
 CREATE TABLE IF NOT EXISTS plans (
   id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
+  plan_name TEXT NOT NULL,
   display_name TEXT NOT NULL,
   description TEXT NOT NULL,
   price DECIMAL(10,2) NOT NULL,
@@ -133,7 +133,7 @@ CREATE TABLE IF NOT EXISTS user_subscriptions (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   user_id TEXT NOT NULL,
   plan_id TEXT NOT NULL,
-  status TEXT DEFAULT 'active' CHECK (status IN ('pending', 'active', 'expired', 'cancelled')),
+  subscription_status TEXT DEFAULT 'active' CHECK (subscription_status IN ('pending', 'active', 'expired', 'cancelled')),
 
   -- 订阅时间
   starts_at DATETIME NOT NULL,
@@ -159,11 +159,11 @@ CREATE TABLE IF NOT EXISTS user_subscriptions (
 CREATE TABLE IF NOT EXISTS billing_records (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   user_id TEXT NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('charge', 'usage', 'refund', 'subscription', 'topup')),
+  record_type TEXT NOT NULL CHECK (record_type IN ('charge', 'usage', 'refund', 'subscription', 'topup')),
   amount DECIMAL(10,4) NOT NULL,
   currency TEXT DEFAULT 'CNY',
   description TEXT NOT NULL,
-  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'failed', 'cancelled')),
+  record_status TEXT DEFAULT 'pending' CHECK (record_status IN ('pending', 'completed', 'failed', 'cancelled')),
 
   -- 支付相关
   payment_method TEXT, -- alipay, wechat, stripe等
@@ -195,7 +195,7 @@ CREATE TABLE IF NOT EXISTS usage_logs (
 
   -- 请求信息
   request_id TEXT,
-  method TEXT NOT NULL,
+  request_method TEXT NOT NULL,
   endpoint TEXT NOT NULL,
   model TEXT NOT NULL,
 
@@ -233,7 +233,7 @@ CREATE TABLE IF NOT EXISTS usage_logs (
 CREATE TABLE IF NOT EXISTS daily_usage_summaries (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   user_id TEXT NOT NULL,
-  date DATE NOT NULL,
+  record_date DATE NOT NULL,
 
   -- 统计数据
   total_requests INTEGER DEFAULT 0,
@@ -257,7 +257,7 @@ CREATE TABLE IF NOT EXISTS daily_usage_summaries (
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  UNIQUE(user_id, date)
+  UNIQUE(user_id, record_date)
 );
 
 -- 模型使用统计表
@@ -265,7 +265,7 @@ CREATE TABLE IF NOT EXISTS model_usage_stats (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   user_id TEXT NOT NULL,
   model TEXT NOT NULL,
-  date DATE NOT NULL,
+  record_date DATE NOT NULL,
 
   requests INTEGER DEFAULT 0,
   tokens INTEGER DEFAULT 0,
@@ -275,7 +275,7 @@ CREATE TABLE IF NOT EXISTS model_usage_stats (
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  UNIQUE(user_id, model, date)
+  UNIQUE(user_id, model, record_date)
 );
 
 -- ============================================================================
@@ -286,15 +286,15 @@ CREATE TABLE IF NOT EXISTS model_usage_stats (
 CREATE TABLE IF NOT EXISTS system_config (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   category TEXT NOT NULL,
-  key TEXT NOT NULL,
-  value TEXT NOT NULL,
+  config_key TEXT NOT NULL,
+  config_value TEXT NOT NULL,
   data_type TEXT DEFAULT 'string' CHECK (data_type IN ('string', 'number', 'boolean', 'json')),
   description TEXT,
   is_public BOOLEAN DEFAULT false, -- 是否可以公开读取
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
-  UNIQUE(category, key)
+  UNIQUE(category, config_key)
 );
 
 -- 网站配置表（用于前台网站配置）
@@ -346,7 +346,7 @@ CREATE TABLE IF NOT EXISTS site_config (
 CREATE TABLE IF NOT EXISTS admin_logs (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   admin_user_id TEXT NOT NULL,
-  action TEXT NOT NULL,
+  admin_action TEXT NOT NULL,
   resource_type TEXT NOT NULL, -- 资源类型：user, plan, config等
   resource_id TEXT,            -- 资源ID
   old_values TEXT,             -- JSON格式的旧值
@@ -363,7 +363,7 @@ CREATE TABLE IF NOT EXISTS system_notifications (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   title TEXT NOT NULL,
   content TEXT NOT NULL,
-  type TEXT DEFAULT 'info' CHECK (type IN ('info', 'warning', 'error', 'success')),
+  notification_type TEXT DEFAULT 'info' CHECK (notification_type IN ('info', 'warning', 'error', 'success')),
   target_type TEXT DEFAULT 'all' CHECK (target_type IN ('all', 'users', 'admins', 'specific')),
   target_users TEXT, -- JSON数组，当target_type为specific时使用
 
@@ -375,6 +375,71 @@ CREATE TABLE IF NOT EXISTS system_notifications (
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 用户通知表
+CREATE TABLE IF NOT EXISTS user_notifications (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  user_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  notification_message TEXT NOT NULL,
+  notification_type TEXT DEFAULT 'info' CHECK (notification_type IN ('system', 'billing', 'security', 'info', 'warning', 'success')),
+  notification_priority TEXT DEFAULT 'medium' CHECK (notification_priority IN ('low', 'medium', 'high')),
+  is_read BOOLEAN DEFAULT false,
+  action_url TEXT,
+  metadata TEXT, -- JSON格式的额外信息
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 通知模板表
+CREATE TABLE IF NOT EXISTS notification_templates (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  template_name TEXT NOT NULL UNIQUE,
+  title TEXT NOT NULL,
+  template_message TEXT NOT NULL,
+  template_type TEXT DEFAULT 'info' CHECK (template_type IN ('system', 'billing', 'security', 'info', 'warning', 'success')),
+  template_priority TEXT DEFAULT 'medium' CHECK (template_priority IN ('low', 'medium', 'high')),
+  action_url TEXT,
+  variables TEXT, -- JSON格式，可用变量说明
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 通知规则表
+CREATE TABLE IF NOT EXISTS notification_rules (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  rule_name TEXT NOT NULL,
+  description TEXT,
+  rule_type TEXT NOT NULL, -- balance_low, subscription_expiring, usage_limit, payment_failed等
+  trigger_condition TEXT NOT NULL, -- JSON格式存储触发条件
+  template_id TEXT NOT NULL,
+  target_scope TEXT DEFAULT 'all_users' CHECK (target_scope IN ('all_users', 'specific_users', 'user_roles')),
+  target_users TEXT, -- JSON格式存储目标用户ID或角色
+  is_enabled BOOLEAN DEFAULT true,
+  cooldown_minutes INTEGER DEFAULT 60, -- 冷却时间，避免重复发送
+  created_by TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+  FOREIGN KEY (template_id) REFERENCES notification_templates(id) ON DELETE CASCADE,
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 规则执行日志表
+CREATE TABLE IF NOT EXISTS notification_rule_logs (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  rule_id TEXT NOT NULL,
+  trigger_data TEXT, -- JSON格式，触发时的数据
+  executed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  notifications_sent INTEGER DEFAULT 0,
+  target_users TEXT, -- JSON格式，实际发送的用户列表
+  success BOOLEAN DEFAULT true,
+  error_message TEXT,
+
+  FOREIGN KEY (rule_id) REFERENCES notification_rules(id) ON DELETE CASCADE
+);
+
 -- ============================================================================
 -- 索引创建
 -- ============================================================================
@@ -382,7 +447,7 @@ CREATE TABLE IF NOT EXISTS system_notifications (
 -- 用户表索引
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_api_key ON users(api_key);
-CREATE INDEX IF NOT EXISTS idx_users_status ON users(status);
+CREATE INDEX IF NOT EXISTS idx_users_status ON users(user_status);
 CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at);
 
 -- 会话表索引
@@ -398,13 +463,13 @@ CREATE INDEX IF NOT EXISTS idx_api_keys_active ON api_keys(is_active);
 -- 订阅表索引
 CREATE INDEX IF NOT EXISTS idx_user_subscriptions_user_id ON user_subscriptions(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_subscriptions_plan_id ON user_subscriptions(plan_id);
-CREATE INDEX IF NOT EXISTS idx_user_subscriptions_status ON user_subscriptions(status);
+CREATE INDEX IF NOT EXISTS idx_user_subscriptions_status ON user_subscriptions(subscription_status);
 CREATE INDEX IF NOT EXISTS idx_user_subscriptions_expires_at ON user_subscriptions(expires_at);
 
 -- 账单表索引
 CREATE INDEX IF NOT EXISTS idx_billing_records_user_id ON billing_records(user_id);
-CREATE INDEX IF NOT EXISTS idx_billing_records_type ON billing_records(type);
-CREATE INDEX IF NOT EXISTS idx_billing_records_status ON billing_records(status);
+CREATE INDEX IF NOT EXISTS idx_billing_records_type ON billing_records(record_type);
+CREATE INDEX IF NOT EXISTS idx_billing_records_status ON billing_records(record_status);
 CREATE INDEX IF NOT EXISTS idx_billing_records_created_at ON billing_records(created_at);
 
 -- 使用日志表索引
@@ -415,18 +480,40 @@ CREATE INDEX IF NOT EXISTS idx_usage_logs_created_at ON usage_logs(created_at);
 CREATE INDEX IF NOT EXISTS idx_usage_logs_status_code ON usage_logs(status_code);
 
 -- 日汇总表索引
-CREATE INDEX IF NOT EXISTS idx_daily_usage_user_id_date ON daily_usage_summaries(user_id, date);
-CREATE INDEX IF NOT EXISTS idx_daily_usage_date ON daily_usage_summaries(date);
+CREATE INDEX IF NOT EXISTS idx_daily_usage_user_id_date ON daily_usage_summaries(user_id, record_date);
+CREATE INDEX IF NOT EXISTS idx_daily_usage_date ON daily_usage_summaries(record_date);
 
 -- 模型统计表索引
-CREATE INDEX IF NOT EXISTS idx_model_usage_user_id_date ON model_usage_stats(user_id, date);
+CREATE INDEX IF NOT EXISTS idx_model_usage_user_id_date ON model_usage_stats(user_id, record_date);
 CREATE INDEX IF NOT EXISTS idx_model_usage_model ON model_usage_stats(model);
 
 -- 系统配置索引
 CREATE INDEX IF NOT EXISTS idx_system_config_category ON system_config(category);
-CREATE INDEX IF NOT EXISTS idx_system_config_key ON system_config(key);
+CREATE INDEX IF NOT EXISTS idx_system_config_key ON system_config(config_key);
 
 -- 管理日志索引
 CREATE INDEX IF NOT EXISTS idx_admin_logs_admin_user_id ON admin_logs(admin_user_id);
-CREATE INDEX IF NOT EXISTS idx_admin_logs_action ON admin_logs(action);
+CREATE INDEX IF NOT EXISTS idx_admin_logs_action ON admin_logs(admin_action);
 CREATE INDEX IF NOT EXISTS idx_admin_logs_created_at ON admin_logs(created_at);
+
+-- 用户通知索引
+CREATE INDEX IF NOT EXISTS idx_user_notifications_user_id ON user_notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_notifications_is_read ON user_notifications(is_read);
+CREATE INDEX IF NOT EXISTS idx_user_notifications_type ON user_notifications(notification_type);
+CREATE INDEX IF NOT EXISTS idx_user_notifications_priority ON user_notifications(notification_priority);
+CREATE INDEX IF NOT EXISTS idx_user_notifications_created_at ON user_notifications(created_at);
+CREATE INDEX IF NOT EXISTS idx_user_notifications_user_read ON user_notifications(user_id, is_read);
+
+-- 通知模板索引
+CREATE INDEX IF NOT EXISTS idx_notification_templates_name ON notification_templates(template_name);
+CREATE INDEX IF NOT EXISTS idx_notification_templates_type ON notification_templates(template_type);
+
+-- 通知规则索引
+CREATE INDEX IF NOT EXISTS idx_notification_rules_type ON notification_rules(rule_type);
+CREATE INDEX IF NOT EXISTS idx_notification_rules_enabled ON notification_rules(is_enabled);
+CREATE INDEX IF NOT EXISTS idx_notification_rules_template_id ON notification_rules(template_id);
+CREATE INDEX IF NOT EXISTS idx_notification_rules_creator ON notification_rules(created_by);
+
+-- 通知规则日志索引
+CREATE INDEX IF NOT EXISTS idx_notification_rule_logs_rule_id ON notification_rule_logs(rule_id);
+CREATE INDEX IF NOT EXISTS idx_notification_rule_logs_executed_at ON notification_rule_logs(executed_at);
