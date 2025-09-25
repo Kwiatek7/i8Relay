@@ -542,11 +542,143 @@ export class StripeProvider extends PaymentProvider {
           ]);
 
           console.log(`用户订阅更新成功: 用户 ${billingRecord.user_id}, 套餐 ${planId}`);
+
+          // 如果是拼车套餐，自动创建AI账号绑定
+          if (planId === 'shared') {
+            await this.createAutoBinding(billingRecord.user_id, planId, expiresAt);
+          }
         }
       }
     } catch (error) {
       console.error('更新用户订阅失败:', error);
       throw error;
     }
+  }
+
+  /**
+   * 为拼车套餐用户自动创建AI账号绑定
+   */
+  private async createAutoBinding(userId: string, planId: string, expiresAt: Date): Promise<void> {
+    const db = await getDb();
+
+    try {
+      console.log(`开始为用户 ${userId} 创建拼车套餐 AI 账号绑定...`);
+
+      // 1. 检查用户是否已有有效绑定
+      const existingBinding = await db.get(`
+        SELECT * FROM user_account_bindings 
+        WHERE user_id = ? AND binding_status = 'active' AND plan_id = ?
+        AND (expires_at IS NULL OR expires_at > ?)
+      `, [userId, planId, new Date().toISOString()]);
+
+      if (existingBinding) {
+        console.log(`用户 ${userId} 已有有效的 AI 账号绑定，跳过创建`);
+        return;
+      }
+
+      // 2. 查找可用的高质量AI账号
+      const availableAccount = await this.findBestAvailableAccount();
+      
+      if (!availableAccount) {
+        console.error(`无法为用户 ${userId} 找到可用的 AI 账号`);
+        // 可以考虑发送通知给管理员
+        return;
+      }
+
+      // 3. 创建绑定记录
+      const bindingId = this.generateId();
+      const currentTime = new Date();
+
+      await db.run(`
+        INSERT INTO user_account_bindings (
+          id, user_id, ai_account_id, plan_id, binding_type, 
+          priority_level, binding_status, starts_at, expires_at,
+          max_requests_per_hour, max_tokens_per_hour,
+          created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [
+        bindingId,
+        userId,
+        availableAccount.id,
+        planId,
+        'dedicated',  // 拼车套餐用户获得专用绑定
+        2,            // 较高优先级
+        'active',
+        currentTime.toISOString(),
+        expiresAt.toISOString(),
+        availableAccount.max_requests_per_minute * 60, // 转换为每小时
+        availableAccount.max_tokens_per_minute * 60,   // 转换为每小时
+        currentTime.toISOString(),
+        currentTime.toISOString()
+      ]);
+
+      console.log(`✅ 成功为用户 ${userId} 创建 AI 账号绑定: ${bindingId} -> 账号 ${availableAccount.account_name} (${availableAccount.id})`);
+
+    } catch (error) {
+      console.error(`为用户 ${userId} 创建自动绑定失败:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 查找最佳可用的AI账号
+   */
+  private async findBestAvailableAccount(): Promise<any> {
+    const db = await getDb();
+
+    try {
+      // 查找活跃且健康的AI账号，优先选择：
+      // 1. 健康分数高的
+      // 2. 当前绑定数较少的
+      // 3. 最近使用时间较近的（说明账号状态良好）
+      const accounts = await db.all(`
+        SELECT 
+          a.*,
+          COALESCE(binding_count.count, 0) as current_bindings
+        FROM ai_accounts a
+        LEFT JOIN (
+          SELECT 
+            ai_account_id, 
+            COUNT(*) as count
+          FROM user_account_bindings 
+          WHERE binding_status = 'active' 
+          AND (expires_at IS NULL OR expires_at > ?)
+          GROUP BY ai_account_id
+        ) binding_count ON a.id = binding_count.ai_account_id
+        WHERE 
+          a.account_status = 'active'
+          AND a.health_score >= 80
+          AND a.tier IN ('basic', 'standard', 'premium')
+        ORDER BY 
+          a.health_score DESC,
+          current_bindings ASC,
+          a.last_used_at DESC,
+          a.created_at ASC
+        LIMIT 5
+      `, [new Date().toISOString()]);
+
+      if (accounts.length === 0) {
+        console.warn('未找到符合条件的可用 AI 账号');
+        return null;
+      }
+
+      // 选择绑定数最少且健康分数最高的账号
+      const bestAccount = accounts[0];
+      
+      console.log(`选中 AI 账号: ${bestAccount.account_name} (健康分数: ${bestAccount.health_score}, 当前绑定数: ${bestAccount.current_bindings})`);
+      
+      return bestAccount;
+
+    } catch (error) {
+      console.error('查找可用 AI 账号失败:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 生成唯一ID
+   */
+  private generateId(): string {
+    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   }
 }

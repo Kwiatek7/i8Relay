@@ -194,3 +194,47 @@ export class JwtManager {
 
 // 导出单例实例
 export const jwtManager = JwtManager.getInstance();
+
+// 便捷的认证验证函数，用于API路由
+export async function verifyAuth(request: any): Promise<{
+  id: string;
+  email: string;
+  role: string;
+  sessionId: string;
+} | null> {
+  try {
+    // 从cookie或Authorization头中获取token
+    let token: string | null = null;
+
+    if (request.cookies) {
+      // Next.js Request对象
+      token = request.cookies.get('access_token')?.value || null;
+    }
+
+    if (!token) {
+      // 尝试从Authorization头获取
+      const authHeader = request.headers.get('authorization') || request.headers.authorization;
+      token = jwtManager.extractTokenFromHeader(authHeader);
+    }
+
+    if (!token) {
+      return null;
+    }
+
+    const payload = await jwtManager.verifyAccessToken(token);
+    if (!payload) {
+      return null;
+    }
+
+    return {
+      id: payload.userId,
+      email: payload.email,
+      role: payload.user_role,
+      sessionId: payload.sessionId
+    };
+
+  } catch (error) {
+    console.error('Token验证失败:', error);
+    return null;
+  }
+}

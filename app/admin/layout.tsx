@@ -82,6 +82,16 @@ export default function AdminLayout({
       icon: Package,
     },
     {
+      name: 'AI账号管理',
+      href: '/admin/ai-accounts',
+      icon: Zap,
+    },
+    {
+      name: '用户绑定',
+      href: '/admin/bindings',
+      icon: Users,
+    },
+    {
       name: '通知管理',
       href: '/admin/notifications',
       icon: Bell,

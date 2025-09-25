@@ -8,7 +8,9 @@
     "build": "next build --turbopack",
     "start": "next start",
     "db:backup": "node -e \"require('./lib/database/connection').default.backup()\"",
-    "db:stats": "node -e \"console.log(require('./lib/database/connection').default.getStats())\""
+    "db:stats": "node -e \"console.log(require('./lib/database/connection').default.getStats())\"",
+    "db:migrate-ai-accounts": "npx tsx scripts/migrate-add-ai-accounts.ts",
+    "ai-accounts:maintenance": "npx tsx -e \"import('./lib/services/resource-allocator.js').then(m => m.resourceAllocator.performMaintenanceTasks())\""
   },
   "dependencies": {
     "@next/third-parties": "^15.5.3",

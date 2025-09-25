@@ -528,5 +528,102 @@ CREATE INDEX `idx_notification_rules_creator` ON `notification_rules`(`created_b
 CREATE INDEX `idx_notification_rule_logs_rule_id` ON `notification_rule_logs`(`rule_id`);
 CREATE INDEX `idx_notification_rule_logs_executed_at` ON `notification_rule_logs`(`executed_at`);
 
+-- ============================================================================
+-- AI账号管理相关表 (新增)
+-- ============================================================================
+
+-- AI账号表
+CREATE TABLE IF NOT EXISTS `ai_accounts` (
+  `id` VARCHAR(32) PRIMARY KEY DEFAULT (REPLACE(UUID(), '-', '')),
+  `account_name` VARCHAR(255) NOT NULL,
+  `provider` VARCHAR(50) NOT NULL,
+  `account_type` VARCHAR(50) NOT NULL,
+  `credentials` TEXT NOT NULL COMMENT '加密存储的凭据',
+  `credentials_hash` VARCHAR(64) COMMENT '凭据哈希用于验证',
+  `key_preview` VARCHAR(50) COMMENT '脱敏的密钥预览',
+
+  -- 账号配置
+  `tier` ENUM('basic', 'standard', 'premium', 'enterprise') DEFAULT 'basic',
+  `max_requests_per_minute` INT DEFAULT 60,
+  `max_tokens_per_minute` INT DEFAULT 100000,
+  `max_concurrent_requests` INT DEFAULT 3,
+  `account_status` ENUM('active', 'inactive', 'maintenance', 'banned', 'expired') DEFAULT 'active',
+  `is_shared` BOOLEAN DEFAULT TRUE COMMENT '是否为共享账号',
+
+  -- 使用统计
+  `total_requests` INT DEFAULT 0,
+  `total_tokens` INT DEFAULT 0,
+  `last_used_at` DATETIME,
+
+  -- 健康状态
+  `health_score` DECIMAL(3,2) DEFAULT 1.00 COMMENT '健康评分 0.00-1.00',
+  `error_count_24h` INT DEFAULT 0 COMMENT '24小时内错误次数',
+  `last_error_at` DATETIME,
+  `last_health_check_at` DATETIME,
+
+  -- 成本管理
+  `monthly_cost` DECIMAL(10,4) DEFAULT 0.0000,
+  `cost_currency` VARCHAR(3) DEFAULT 'USD',
+  `description` TEXT,
+  `tags` JSON,
+
+  -- 时间戳
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  INDEX `idx_ai_accounts_provider` (`provider`),
+  INDEX `idx_ai_accounts_tier` (`tier`),
+  INDEX `idx_ai_accounts_status` (`account_status`),
+  INDEX `idx_ai_accounts_shared` (`is_shared`),
+  INDEX `idx_ai_accounts_health` (`health_score`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 用户账号绑定表
+CREATE TABLE IF NOT EXISTS `user_account_bindings` (
+  `id` VARCHAR(32) PRIMARY KEY DEFAULT (REPLACE(UUID(), '-', '')),
+  `user_id` VARCHAR(32) NOT NULL,
+  `ai_account_id` VARCHAR(32) NOT NULL,
+  `plan_id` VARCHAR(32) NOT NULL,
+
+  -- 绑定配置
+  `binding_type` ENUM('dedicated', 'priority', 'shared') DEFAULT 'shared',
+  `priority_level` INT DEFAULT 1 COMMENT '优先级 1-10',
+  `binding_status` ENUM('active', 'inactive', 'expired', 'suspended') DEFAULT 'active',
+
+  -- 使用限制
+  `max_requests_per_hour` INT COMMENT '每小时最大请求数',
+  `max_tokens_per_hour` INT COMMENT '每小时最大token数',
+
+  -- 时间范围
+  `starts_at` DATETIME NOT NULL,
+  `expires_at` DATETIME COMMENT '过期时间，NULL表示永不过期',
+  `last_used_at` DATETIME,
+
+  -- 使用统计
+  `total_requests` INT DEFAULT 0,
+  `total_tokens` INT DEFAULT 0,
+  `total_cost` DECIMAL(10,4) DEFAULT 0.0000,
+
+  -- 时间戳
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  -- 外键约束
+  FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`ai_account_id`) REFERENCES `ai_accounts`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`plan_id`) REFERENCES `plans`(`id`) ON DELETE RESTRICT,
+
+  -- 索引
+  INDEX `idx_user_bindings_user` (`user_id`),
+  INDEX `idx_user_bindings_account` (`ai_account_id`),
+  INDEX `idx_user_bindings_plan` (`plan_id`),
+  INDEX `idx_user_bindings_status` (`binding_status`),
+  INDEX `idx_user_bindings_type` (`binding_type`),
+  INDEX `idx_user_bindings_expires` (`expires_at`),
+
+  -- 唯一约束：同一用户不能多次绑定同一AI账号
+  UNIQUE KEY `uk_user_account_binding` (`user_id`, `ai_account_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 COMMIT;
 SET FOREIGN_KEY_CHECKS = 1;
