@@ -14,7 +14,14 @@ import {
   MoreVertical,
   Eye,
   Users,
-  Zap
+  Zap,
+  Check,
+  X,
+  Square,
+  CheckSquare,
+  RefreshCw,
+  Power,
+  PowerOff
 } from 'lucide-react';
 import type { AIAccount } from '../../../lib/database/models/ai-account';
 
@@ -422,6 +429,10 @@ export default function AIAccountsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  // 批量操作相关状态
+  const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
+  const [batchOperationLoading, setBatchOperationLoading] = useState(false);
+
   useEffect(() => {
     fetchAccounts();
     fetchStats();
@@ -578,6 +589,142 @@ export default function AIAccountsPage() {
     account.provider.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // 批量操作函数
+  const handleSelectAccount = (accountId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedAccounts(prev => [...prev, accountId]);
+    } else {
+      setSelectedAccounts(prev => prev.filter(id => id !== accountId));
+    }
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedAccounts(filteredAccounts.map(account => account.id));
+    } else {
+      setSelectedAccounts([]);
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedAccounts.length === 0) {
+      alert('请先选择要删除的账号');
+      return;
+    }
+
+    if (!confirm(`确认删除选中的 ${selectedAccounts.length} 个账号吗？此操作不可撤销。`)) {
+      return;
+    }
+
+    setBatchOperationLoading(true);
+    try {
+      const response = await fetch('/api/admin/ai-accounts/batch', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ accountIds: selectedAccounts })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        alert(`成功删除 ${data.deletedCount} 个账号`);
+        setSelectedAccounts([]);
+        fetchAccounts();
+        fetchStats();
+      } else {
+        alert(data.message || '批量删除失败');
+      }
+    } catch (error) {
+      console.error('批量删除失败:', error);
+      alert('批量删除操作失败');
+    } finally {
+      setBatchOperationLoading(false);
+    }
+  };
+
+  const handleBatchStatusChange = async (newStatus: string) => {
+    if (selectedAccounts.length === 0) {
+      alert('请先选择要操作的账号');
+      return;
+    }
+
+    const statusNames: Record<string, string> = {
+      active: '启用',
+      inactive: '禁用',
+      maintenance: '维护'
+    };
+
+    if (!confirm(`确认将选中的 ${selectedAccounts.length} 个账号设置为${statusNames[newStatus]}状态吗？`)) {
+      return;
+    }
+
+    setBatchOperationLoading(true);
+    try {
+      const response = await fetch('/api/admin/ai-accounts/batch', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          accountIds: selectedAccounts,
+          updates: { account_status: newStatus }
+        })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        alert(`成功更新 ${data.updatedCount} 个账号状态`);
+        setSelectedAccounts([]);
+        fetchAccounts();
+        fetchStats();
+      } else {
+        alert(data.message || '批量更新失败');
+      }
+    } catch (error) {
+      console.error('批量状态更新失败:', error);
+      alert('批量操作失败');
+    } finally {
+      setBatchOperationLoading(false);
+    }
+  };
+
+  const handleBatchHealthCheck = async () => {
+    if (selectedAccounts.length === 0) {
+      alert('请先选择要检查的账号');
+      return;
+    }
+
+    if (!confirm(`确认对选中的 ${selectedAccounts.length} 个账号进行健康检查吗？`)) {
+      return;
+    }
+
+    setBatchOperationLoading(true);
+    try {
+      const response = await fetch('/api/admin/ai-accounts/batch-health-check', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ accountIds: selectedAccounts })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        alert(`健康检查完成：${data.healthyCount} 健康，${data.warningCount} 警告，${data.failedCount} 失败`);
+        setSelectedAccounts([]);
+        fetchAccounts();
+      } else {
+        alert(data.message || '批量健康检查失败');
+      }
+    } catch (error) {
+      console.error('批量健康检查失败:', error);
+      alert('批量健康检查操作失败');
+    } finally {
+      setBatchOperationLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* 页面标题 */}
@@ -631,6 +778,57 @@ export default function AIAccountsPage() {
           </div>
         ))}
       </div>
+
+      {/* 批量操作工具栏 */}
+      {selectedAccounts.length > 0 && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-xl">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-blue-900 dark:text-blue-100">
+              已选择 {selectedAccounts.length} 个账号
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => handleBatchStatusChange('active')}
+                disabled={batchOperationLoading}
+                className="flex items-center px-3 py-1.5 bg-green-600 text-white rounded text-sm hover:bg-green-700 disabled:bg-gray-400 transition-colors"
+              >
+                <Power className="h-4 w-4 mr-1" />
+                启用
+              </button>
+              <button
+                onClick={() => handleBatchStatusChange('inactive')}
+                disabled={batchOperationLoading}
+                className="flex items-center px-3 py-1.5 bg-yellow-600 text-white rounded text-sm hover:bg-yellow-700 disabled:bg-gray-400 transition-colors"
+              >
+                <PowerOff className="h-4 w-4 mr-1" />
+                禁用
+              </button>
+              <button
+                onClick={handleBatchHealthCheck}
+                disabled={batchOperationLoading}
+                className="flex items-center px-3 py-1.5 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:bg-gray-400 transition-colors"
+              >
+                <RefreshCw className={`h-4 w-4 mr-1 ${batchOperationLoading ? 'animate-spin' : ''}`} />
+                健康检查
+              </button>
+              <button
+                onClick={handleBatchDelete}
+                disabled={batchOperationLoading}
+                className="flex items-center px-3 py-1.5 bg-red-600 text-white rounded text-sm hover:bg-red-700 disabled:bg-gray-400 transition-colors"
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                删除
+              </button>
+              <button
+                onClick={() => setSelectedAccounts([])}
+                className="px-3 py-1.5 bg-gray-500 text-white rounded text-sm hover:bg-gray-600 transition-colors"
+              >
+                取消选择
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 搜索和过滤器 */}
       <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
@@ -701,7 +899,21 @@ export default function AIAccountsPage() {
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      账号信息
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={(e) => {
+                            const checked = (e.target as HTMLInputElement).checked;
+                            handleSelectAll(checked);
+                          }}
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          {selectedAccounts.length === filteredAccounts.length && filteredAccounts.length > 0
+                            ? <CheckSquare className="h-4 w-4" />
+                            : <Square className="h-4 w-4" />
+                          }
+                        </button>
+                        <span>账号信息</span>
+                      </div>
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       等级/类型
@@ -725,6 +937,15 @@ export default function AIAccountsPage() {
                     <tr key={account.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
+                          <button
+                            onClick={() => handleSelectAccount(account.id, !selectedAccounts.includes(account.id))}
+                            className="mr-3 text-blue-600 hover:text-blue-800"
+                          >
+                            {selectedAccounts.includes(account.id)
+                              ? <CheckSquare className="h-4 w-4" />
+                              : <Square className="h-4 w-4" />
+                            }
+                          </button>
                           <div className="flex-shrink-0">
                             {getStatusIcon(account.account_status, account.health_score)}
                           </div>

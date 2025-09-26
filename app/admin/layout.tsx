@@ -15,7 +15,9 @@ import {
   LogOut,
   Home,
   Bell,
-  Zap
+  Zap,
+  FileText,
+  Book
 } from 'lucide-react';
 import BackToTop from '../components/BackToTop';
 
@@ -87,6 +89,11 @@ export default function AdminLayout({
       icon: Zap,
     },
     {
+      name: '账号测试工具',
+      href: '/admin/ai-accounts/test',
+      icon: Activity,
+    },
+    {
       name: '用户绑定',
       href: '/admin/bindings',
       icon: Users,
@@ -110,6 +117,16 @@ export default function AdminLayout({
       name: '使用统计',
       href: '/admin/usage',
       icon: Activity,
+    },
+    {
+      name: '系统日志',
+      href: '/admin/logs',
+      icon: FileText,
+    },
+    {
+      name: 'API文档',
+      href: '/admin/api-docs',
+      icon: Book,
     },
   ];
 
