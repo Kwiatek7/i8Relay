@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyAuth } from '../../../../../../lib/auth/jwt';
-import { aiAccountModel } from '../../../../../../lib/database/models/ai-account';
-import { decrypt } from '../../../../../../lib/utils/encryption';
+import { verifyAuth } from '../../../../../lib/auth/jwt';
+import { aiAccountModel } from '../../../../../lib/database/models/ai-account';
+import { decrypt } from '../../../../../lib/utils/encryption';
 
 // 批量健康检查
 export async function POST(request: NextRequest) {
