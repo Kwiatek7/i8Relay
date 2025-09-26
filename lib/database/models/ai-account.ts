@@ -59,6 +59,16 @@ export interface UpdateAIAccountData {
   monthly_cost?: number;
   description?: string;
   tags?: string[];
+  // 健康检查相关字段
+  health_score?: number;
+  error_count_24h?: number;
+  last_error_at?: string;
+  last_health_check_at?: string;
+  // 使用统计字段
+  total_requests?: number;
+  total_tokens?: number;
+  last_used_at?: string;
+  updated_at?: string;
 }
 
 export interface AIAccountFilter {
