@@ -2,6 +2,8 @@
 
 一个基于 Next.js 15 构建的现代化 AI API 中转服务平台，提供稳定、安全、高效的 Claude、GPT、Gemini 等 AI 模型 API 代理服务。
 
+# 由于 Claude 官方额度限制问题 此项目暂停更新
+
 ## 特别推荐：i7relay
 🔥 **强烈推荐使用原版 i7relay！**
 
